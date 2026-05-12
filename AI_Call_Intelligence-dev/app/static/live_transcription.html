@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Call Intelligence - Live Transcription</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0f0f23;
+            color: #cdd6f4;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header p {
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1.5rem;
+            background: #1e1e2e;
+            border-radius: 12px;
+            border: 1px solid #313244;
+        }
+        button {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #startBtn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        #startBtn:hover { transform: scale(1.05); }
+        #startBtn:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+        #stopBtn {
+            background: #ef4444;
+            color: white;
+        }
+        #stopBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #status {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-left: auto;
+        }
+        .waveform {
+            height: 4px;
+            background: #313244;
+            border-radius: 2px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .waveform-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+        }
+        .transcript-box {
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #313244;
+        }
+        .transcript-entry {
+            padding: 0.6rem 1rem;
+            margin: 0.4rem 0;
+            border-radius: 8px;
+            background: #313244;
+            border-left: 3px solid #667eea;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .transcript-time {
+            font-size: 0.75rem;
+            color: #89b4fa;
+            font-weight: 600;
+        }
+        .transcript-text {
+            font-size: 0.95rem;
+            color: #cdd6f4;
+            margin-top: 0.2rem;
+        }
+        .placeholder {
+            color: #6b7280;
+            font-style: italic;
+            text-align: center;
+            padding: 3rem;
+        }
+        .config {
+            margin-top: 1.5rem;
+            padding: 1rem 1.5rem;
+            background: #1e1e2e;
+            border-radius: 12px;
+            border: 1px solid #313244;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .config label {
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+        .config input {
+            background: #313244;
+            border: 1px solid #45475a;
+            border-radius: 6px;
+            padding: 0.4rem 0.8rem;
+            color: #cdd6f4;
+            font-size: 0.85rem;
+        }
+        .config input[type="checkbox"] {
+            accent-color: #667eea;
+        }
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            margin-bottom: 1.5rem;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 0.8rem;
+            background: #1e1e2e;
+            color: #6b7280;
+            border: 1px solid #313244;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .tab-btn:first-child { border-radius: 8px 0 0 8px; }
+        .tab-btn:last-child { border-radius: 0 8px 8px 0; }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .sc-entry {
+            border-left-color: #f97316 !important;
+        }
+        .timer {
+            color: #89b4fa;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Call Intelligence</h1>
+            <p>Real-time live transcription powered by Whisper</p>
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('mic')">Microphone</button>
+            <button class="tab-btn" onclick="switchTab('screen')">Screen Capture</button>
+        </div>
+
+        <!-- Mic Tab -->
+        <div id="tab-mic" class="tab-panel active">
+        <div class="controls">
+            <button id="startBtn" onclick="startRecording()">Start Recording</button>
+            <button id="stopBtn" onclick="stopRecording()" disabled>Stop</button>
+            <span id="status">Ready</span>
+        </div>
+
+        <div class="waveform">
+            <div class="waveform-bar" id="waveform-bar"></div>
+        </div>
+
+        <div class="transcript-box" id="transcript-box">
+            <p class="placeholder">Click "Start Recording" to begin live transcription...</p>
+        </div>
+        </div>
+
+        <!-- Screen Capture Tab -->
+        <div id="tab-screen" class="tab-panel">
+        <div class="controls" style="flex-wrap: wrap;">
+            <button id="scStartBtn" onclick="startScreenCapture()" style="background: linear-gradient(135deg, #f97316, #ef4444); color: white;">Capture Screen Audio</button>
+            <button id="scStopBtn" onclick="stopScreenCapture()" disabled>Stop</button>
+            <button id="scDownloadBtn" onclick="downloadRecording()" disabled style="background: #22c55e; color: white; opacity: 0.5;">Download Recording</button>
+            <span id="scStatus">Ready</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 0 0.5rem;">
+            <label style="color: #a6adc8; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+                <input type="checkbox" id="scIncludeMic"> Mix microphone audio
+            </label>
+            <span id="scTimer" class="timer" style="margin-left: auto;">00:00:00</span>
+        </div>
+        <div class="waveform">
+            <div class="waveform-bar" id="sc-waveform-bar"></div>
+        </div>
+        <div class="transcript-box" id="sc-transcript-box">
+            <p class="placeholder">Select a screen or window to capture its audio. Check "Share audio" when prompted.</p>
+        </div>
+        </div>
+
+        <div class="config">
+            <label>WebSocket URL:</label>
+            <input type="text" id="wsUrl" value="ws://localhost:8000/ws/transcribe" style="flex:1;">
+            <label>Chunk (ms):</label>
+            <input type="number" id="chunkMs" value="2000" style="width: 80px;">
+        </div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let ws;
+        let isRecording = false;
+        let micChunks = [];
+
+        function getApiBase() {
+            const wsUrl = document.getElementById('wsUrl').value;
+            return wsUrl.replace('ws://', 'http://').replace('wss://', 'https://').replace('/ws/transcribe', '');
+        }
+
+        function uploadToServer(blob, filename, statusEl) {
+            const formData = new FormData();
+            formData.append('file', blob, filename);
+            if (statusEl) statusEl.innerHTML = '<span style="color: #89b4fa;">Saving recording...</span>';
+            fetch(getApiBase() + '/api/upload-recording', { method: 'POST', body: formData })
+                .then(r => r.json())
+                .then(data => {
+                    if (statusEl) statusEl.innerHTML = '<span style="color: #a6e3a1;">Saved: ' + data.filename + '</span>';
+                })
+                .catch(err => {
+                    if (statusEl) statusEl.innerHTML = '<span style="color: #f9e2af;">Stopped (server save failed)</span>';
+                    console.error('Upload error:', err);
+                });
+        }
+
+        // --- Tab switching ---
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // --- Mic recording ---
+        function startRecording() {
+            const wsUrl = document.getElementById('wsUrl').value;
+            const chunkMs = parseInt(document.getElementById('chunkMs').value) || 2000;
+            micChunks = [];
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    ws = new WebSocket(wsUrl);
+
+                    ws.onopen = () => {
+                        document.getElementById('status').innerHTML =
+                            '<span style="color: #a6e3a1;">Recording & Transcribing</span>';
+                        document.getElementById('startBtn').disabled = true;
+                        document.getElementById('stopBtn').disabled = false;
+                    };
+
+                    ws.onmessage = (event) => {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'transcription') {
+                            addTranscriptEntry(data.time, data.text);
+                        } else if (data.type === 'session_start') {
+                            console.log('Session started:', data.session_id);
+                        }
+                    };
+
+                    ws.onerror = () => {
+                        document.getElementById('status').innerHTML =
+                            '<span style="color: #ef4444;">Connection Error — Is the server running?</span>';
+                    };
+
+                    ws.onclose = () => {
+                        if (isRecording) stopRecording();
+                    };
+
+                    mediaRecorder = new MediaRecorder(stream, {
+                        mimeType: 'audio/webm;codecs=opus'
+                    });
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            micChunks.push(event.data);
+                            if (ws && ws.readyState === WebSocket.OPEN) {
+                                ws.send(event.data);
+                            }
+                            const bar = document.getElementById('waveform-bar');
+                            bar.style.width = Math.random() * 60 + 40 + '%';
+                            setTimeout(() => bar.style.width = '0%', 300);
+                        }
+                    };
+
+                    mediaRecorder.start(chunkMs);
+                    isRecording = true;
+                })
+                .catch(err => {
+                    document.getElementById('status').innerHTML =
+                        '<span style="color: #ef4444;">Microphone access denied</span>';
+                    console.error('Mic error:', err);
+                });
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            }
+            if (ws) ws.close();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('waveform-bar').style.width = '0%';
+
+            if (micChunks.length > 0) {
+                const blob = new Blob(micChunks, { type: 'audio/webm' });
+                const filename = 'mic_recording_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.webm';
+                uploadToServer(blob, filename, document.getElementById('status'));
+            } else {
+                document.getElementById('status').innerHTML =
+                    '<span style="color: #f9e2af;">Stopped</span>';
+            }
+        }
+
+        function addTranscriptEntry(time, text) {
+            const box = document.getElementById('transcript-box');
+            const placeholder = box.querySelector('.placeholder');
+            if (placeholder) placeholder.remove();
+
+            const entry = document.createElement('div');
+            entry.className = 'transcript-entry';
+            entry.innerHTML = `
+                <div class="transcript-time">${time}</div>
+                <div class="transcript-text">${text}</div>
+            `;
+            box.appendChild(entry);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // --- Screen Capture ---
+        let scMediaRecorder, scWs, scFullRecorder;
+        let scIsRecording = false;
+        let scChunks = [];
+        let scTimerInterval, scSeconds = 0;
+
+        function formatTime(s) {
+            const h = String(Math.floor(s / 3600)).padStart(2, '0');
+            const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+            const sec = String(s % 60).padStart(2, '0');
+            return h + ':' + m + ':' + sec;
+        }
+
+        async function startScreenCapture() {
+            const wsUrl = document.getElementById('wsUrl').value;
+            const chunkMs = parseInt(document.getElementById('chunkMs').value) || 2000;
+
+            try {
+                const displayStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+
+                const audioTracks = displayStream.getAudioTracks();
+                if (audioTracks.length === 0) {
+                    document.getElementById('scStatus').innerHTML =
+                        '<span style="color: #ef4444;">No audio - check "Share audio" when sharing</span>';
+                    displayStream.getTracks().forEach(t => t.stop());
+                    return;
+                }
+
+                const audioCtx = new AudioContext();
+                const displaySource = audioCtx.createMediaStreamSource(new MediaStream(audioTracks));
+                const destination = audioCtx.createMediaStreamDestination();
+                displaySource.connect(destination);
+
+                if (document.getElementById('scIncludeMic').checked) {
+                    try {
+                        const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        const micSource = audioCtx.createMediaStreamSource(micStream);
+                        micSource.connect(destination);
+                    } catch(e) {
+                        console.warn('Mic not available');
+                    }
+                }
+
+                scWs = new WebSocket(wsUrl);
+                scWs.onopen = () => {
+                    document.getElementById('scStatus').innerHTML =
+                        '<span style="color: #a6e3a1;">Capturing & Transcribing</span>';
+                    document.getElementById('scStartBtn').disabled = true;
+                    document.getElementById('scStopBtn').disabled = false;
+                };
+                scWs.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'transcription') {
+                        scAddEntry(data.time, data.text);
+                    }
+                };
+                scWs.onerror = () => {
+                    document.getElementById('scStatus').innerHTML =
+                        '<span style="color: #ef4444;">WebSocket error</span>';
+                };
+                scWs.onclose = () => { if (scIsRecording) stopScreenCapture(); };
+
+                scMediaRecorder = new MediaRecorder(destination.stream, {
+                    mimeType: 'audio/webm;codecs=opus'
+                });
+                scMediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0 && scWs && scWs.readyState === WebSocket.OPEN) {
+                        scWs.send(event.data);
+                        const bar = document.getElementById('sc-waveform-bar');
+                        bar.style.width = Math.random() * 60 + 40 + '%';
+                        setTimeout(() => bar.style.width = '0%', 300);
+                    }
+                };
+                scMediaRecorder.start(chunkMs);
+
+                scChunks = [];
+                scFullRecorder = new MediaRecorder(displayStream, {
+                    mimeType: 'video/webm;codecs=vp9,opus'
+                });
+                scFullRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) scChunks.push(event.data);
+                };
+                scFullRecorder.start(1000);
+
+                scSeconds = 0;
+                document.getElementById('scTimer').textContent = '00:00:00';
+                scTimerInterval = setInterval(() => {
+                    scSeconds++;
+                    document.getElementById('scTimer').textContent = formatTime(scSeconds);
+                }, 1000);
+
+                displayStream.getVideoTracks()[0].onended = () => stopScreenCapture();
+                scIsRecording = true;
+
+            } catch(err) {
+                document.getElementById('scStatus').innerHTML =
+                    '<span style="color: #ef4444;">Screen capture denied or not supported</span>';
+                console.error('Screen capture error:', err);
+            }
+        }
+
+        function stopScreenCapture() {
+            scIsRecording = false;
+            clearInterval(scTimerInterval);
+            if (scMediaRecorder && scMediaRecorder.state !== 'inactive') scMediaRecorder.stop();
+            if (scFullRecorder && scFullRecorder.state !== 'inactive') scFullRecorder.stop();
+            if (scWs) scWs.close();
+            if (scMediaRecorder && scMediaRecorder.stream)
+                scMediaRecorder.stream.getTracks().forEach(t => t.stop());
+            if (scFullRecorder && scFullRecorder.stream)
+                scFullRecorder.stream.getTracks().forEach(t => t.stop());
+
+            document.getElementById('scStatus').innerHTML =
+                '<span style="color: #f9e2af;">Stopped - ' + formatTime(scSeconds) + ' recorded</span>';
+            document.getElementById('scStartBtn').disabled = false;
+            document.getElementById('scStopBtn').disabled = true;
+            document.getElementById('sc-waveform-bar').style.width = '0%';
+
+            if (scChunks.length > 0) {
+                document.getElementById('scDownloadBtn').disabled = false;
+                document.getElementById('scDownloadBtn').style.opacity = '1';
+                // Auto-save to server
+                const blob = new Blob(scChunks, { type: 'video/webm' });
+                const filename = 'meeting_recording_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.webm';
+                uploadToServer(blob, filename, document.getElementById('scStatus'));
+            }
+        }
+
+        function downloadRecording() {
+            if (scChunks.length === 0) return;
+            const blob = new Blob(scChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'meeting_recording_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.webm';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function scAddEntry(time, text) {
+            const box = document.getElementById('sc-transcript-box');
+            const placeholder = box.querySelector('.placeholder');
+            if (placeholder) placeholder.remove();
+            const entry = document.createElement('div');
+            entry.className = 'transcript-entry sc-entry';
+            entry.innerHTML = `
+                <div class="transcript-time">${time}</div>
+                <div class="transcript-text">${text}</div>
+            `;
+            box.appendChild(entry);
+            box.scrollTop = box.scrollHeight;
+        }
+    </script>
+</body>
+</html>
