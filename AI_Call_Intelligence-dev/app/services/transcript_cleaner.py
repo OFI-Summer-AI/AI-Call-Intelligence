@@ -1,4 +1,7 @@
 from typing import List, Dict
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def clean_segments(segments: List[Dict]) -> List[Dict]:
@@ -19,4 +22,6 @@ def clean_segments(segments: List[Dict]) -> List[Dict]:
                 "text": " ".join(text.split()),
             }
         )
+    dropped = len(segments) - len(cleaned)
+    logger.debug("Cleaned segments: %d in, %d out, %d dropped", len(segments), len(cleaned), dropped)
     return cleaned

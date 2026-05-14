@@ -2,6 +2,9 @@ from pathlib import Path
 import os
 import subprocess
 import shutil
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def _resolve_ffmpeg_binary() -> str:
@@ -28,12 +31,10 @@ def _resolve_ffmpeg_binary() -> str:
 
 
 def extract_audio(video_path: str | Path, audio_path: str | Path) -> str:
-    """
-    Convert MP4 to WAV audio.
-    """
     video_path = Path(video_path)
     audio_path = Path(audio_path)
 
+    logger.info("Extracting audio: %s -> %s", video_path.name, audio_path.name)
     audio_path.parent.mkdir(parents=True, exist_ok=True)
     ffmpeg_binary = _resolve_ffmpeg_binary()
 
@@ -50,10 +51,13 @@ def extract_audio(video_path: str | Path, audio_path: str | Path) -> str:
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
+        logger.error("FFmpeg failed for %s\n%s", video_path.name, result.stderr)
         raise RuntimeError(
             "Audio extraction failed.\n"
             f"Command: {' '.join(cmd)}\n"
             f"stderr: {result.stderr}"
         )
 
+    size_kb = audio_path.stat().st_size // 1024
+    logger.info("Audio extracted — %d KB saved to %s", size_kb, audio_path.name)
     return str(audio_path)

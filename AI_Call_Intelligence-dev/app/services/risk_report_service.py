@@ -1,4 +1,7 @@
 from typing import Dict, List
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class RiskReportService:
@@ -26,7 +29,12 @@ class RiskReportService:
         if not extracted_fields.get("next_steps"):
             risks.append("Next steps should be confirmed.")
 
-        return {
+        report = {
             "risks": risks,
             "needs_review": len(risks) > 0,
         }
+        if risks:
+            logger.warning("Risk report: %d risk(s) flagged — %s", len(risks), "; ".join(risks))
+        else:
+            logger.info("Risk report: no risks flagged")
+        return report

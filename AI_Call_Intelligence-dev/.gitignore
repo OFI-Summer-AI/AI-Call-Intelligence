@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+venv/
+.venv/
+
+# Credentials & tokens (NEVER commit these)
+credentials.json
+google_token.json
+outlook_token.json
+
+# Data (large files — keep in local storage only)
+data/audio/
+data/uploads/
+data/logs/
+
+# Keep output results in git (optional — remove line below to exclude)
+# data/outputs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

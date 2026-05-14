@@ -1,110 +1,109 @@
+import json
+import os
 import re
-from typing import List, Dict
+from typing import Dict, List
+
+from app.logger import get_logger
+
+logger = get_logger(__name__)
+
+_PROMPT = """You are analyzing a sales/customer meeting transcript.
+Return ONLY a valid JSON object — no markdown, no explanation, just the JSON.
+
+Keys required:
+- "client_name": string or null
+- "client_problem": string or null (1-2 sentence summary of the business problem)
+- "strict_requirements": list of strings (up to 8, each under 15 words)
+- "techstack_platform": list of strings (specific tools/platforms mentioned)
+- "timeline": string or null
+- "budget": string or null
+- "next_steps": list of strings (up to 6 actionable next steps, each under 20 words)
+Use this SOP to evaluate conformance (100 pts total):
+  1. Call Opening (15 pts) — Professional greeting with name/company; purpose stated; agenda set
+  2. Needs Discovery (20 pts) — Client's primary problem identified; open-ended questions asked; understanding confirmed back to client
+  3. Qualification (15 pts) — Budget explored or acknowledged; project timeline discussed; decision-makers or stakeholders identified
+  4. Solution Alignment (20 pts) — Solution matched to the identified problem; technical platform or requirements discussed; value proposition clearly communicated
+  5. Objection Handling (15 pts) — All objections/concerns acknowledged; responded with relevant information or evidence; client satisfaction with response confirmed
+  6. Call Closing (15 pts) — Clear next steps defined with owners; follow-up timeline agreed; call ended on a positive note
+  Score thresholds: 85-100 = pass, 65-84 = review, 0-64 = fail
+  Map conformance_passed and conformance_missed to specific SOP section names above.
+
+- "conformance_score": integer 0-100 (total score across the 6 SOP sections)
+- "conformance_status": one of "pass" (85+), "review" (65-84), "fail" (<65)
+- "conformance_passed": list of strings — SOP section names that were satisfactorily met (e.g. "Call Opening", "Needs Discovery")
+- "conformance_missed": list of strings — SOP section names that were missed or incomplete (e.g. "Qualification", "Objection Handling")
+- "call_score": float 0.0-10.0 with one decimal place (e.g. 7.3)
+- "call_rating": one of "excellent", "good", "average", "poor"
+- "call_summary": string (2-3 sentence assessment of overall call quality)
+- "call_highlights": list of strings (up to 3 positive moments or strengths of the call)
+- "call_concerns": list of strings (up to 3 concerns or missed opportunities)
+- "individual_score": float 0.0-10.0 with one decimal place (e.g. 8.1)
+- "individual_summary": string (1-2 sentence assessment of the individual's performance)
+- "individual_strengths": list of strings (up to 3 strengths)
+- "individual_improvements": list of strings (up to 3 areas to improve)
+- "call_insights": list of strings (up to 4 key insights or observations from the call)
+- "conclusions": string (1-2 sentence conclusion on call outcomes and overall status)
+
+Important: summarize and rewrite in plain English. Do NOT copy raw transcript sentences.
+
+Transcript:
+{transcript}
+"""
+
+_EMPTY = {
+    "client_name": None, "client_problem": None,
+    "strict_requirements": [], "techstack_platform": [],
+    "timeline": None, "budget": None, "next_steps": [],
+    "conformance_score": None, "conformance_status": None,
+    "conformance_passed": [], "conformance_missed": [],
+    "call_score": None, "call_rating": None,
+    "call_summary": None, "call_highlights": [], "call_concerns": [],
+    "individual_score": None, "individual_summary": None,
+    "individual_strengths": [], "individual_improvements": [],
+    "call_insights": [], "conclusions": None,
+}
 
 
 class FieldExtractor:
-    """
-    Simple rule-based starter extractor.
-    Replace later with an LLM-based extractor if needed.
-    """
-
-    CLIENT_NAME_PATTERNS = [
-        r"client name is ([^.]+)",
-        r"from ([A-Z][A-Za-z0-9&\s]+)",
-    ]
 
     def extract(self, transcript_segments: List[Dict]) -> dict:
-        full_text = " ".join(seg["text"] for seg in transcript_segments)
+        api_key = os.getenv("GROQ_API_KEY", "")
+        if not api_key:
+            logger.error("GROQ_API_KEY not set — skipping LLM field extraction")
+            return dict(_EMPTY)
 
-        return {
-            "client_name": self._extract_client_name(full_text),
-            "client_problem": self._extract_problem(full_text),
-            "strict_requirements": self._extract_requirements(full_text),
-            "techstack_platform": self._extract_platforms(full_text),
-            "timeline": self._extract_timeline(full_text),
-            "budget": self._extract_budget(full_text),
-            "next_steps": self._extract_next_steps(full_text),
-        }
+        full_text = " ".join(seg.get("text", "") for seg in transcript_segments)
+        if not full_text.strip():
+            logger.warning("Empty transcript — skipping field extraction")
+            return dict(_EMPTY)
 
-    def _extract_client_name(self, text: str) -> str | None:
-        for pattern in self.CLIENT_NAME_PATTERNS:
-            m = re.search(pattern, text, flags=re.IGNORECASE)
+        prompt = _PROMPT.format(transcript=full_text[:8000])
+
+        try:
+            from groq import Groq
+            client = Groq(api_key=api_key)
+            response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=1800,
+            )
+            raw = response.choices[0].message.content.strip()
+            logger.info("Groq raw response (first 300): %s", raw[:300])
+
+            # strip markdown code fences if present
+            raw = re.sub(r"^```(?:json)?\s*", "", raw)
+            raw = re.sub(r"\s*```$", "", raw)
+
+            m = re.search(r"\{.*\}", raw, re.DOTALL)
             if m:
-                return m.group(1).strip()
-        return None
+                fields = json.loads(m.group())
+                logger.info("LLM field extraction succeeded: %s", list(fields.keys()))
+                return fields
 
-    def _extract_problem(self, text: str) -> str | None:
-        keywords = [
-            "problem",
-            "pain point",
-            "issue",
-            "challenge",
-            "difficulty",
-            "manual",
-            "delay",
-        ]
-        if any(k in text.lower() for k in keywords):
-            return "Potential business problem mentioned in call"
-        return None
+            logger.warning("No JSON object found in LLM response: %s", raw[:300])
+        except Exception as exc:
+            logger.error("LLM field extraction failed: %s", exc)
+            raise  # re-raise so the caller can surface the error
 
-    def _extract_requirements(self, text: str) -> list[str]:
-        reqs = []
-        patterns = [
-            r"must (?:be|support) ([^.]+)",
-            r"need ([^.]+)",
-            r"require ([^.]+)",
-            r"should ([^.]+)",
-        ]
-        for pattern in patterns:
-            for m in re.finditer(pattern, text, flags=re.IGNORECASE):
-                value = m.group(1).strip()
-                if value and value not in reqs:
-                    reqs.append(value)
-        return reqs
-
-    def _extract_platforms(self, text: str) -> list[str]:
-        platforms = ["SAP", "Power BI", "Tableau", "Salesforce", "AWS", "Azure", "GCP", "Databricks"]
-        found = []
-        lower = text.lower()
-        for p in platforms:
-            if p.lower() in lower:
-                found.append(p)
-        return found
-
-    def _extract_timeline(self, text: str) -> str | None:
-        patterns = [
-            r"within (\d+\s?(?:days?|weeks?|months?))",
-            r"in (\d+\s?(?:days?|weeks?|months?))",
-            r"by (\w+\s?\w*)",
-        ]
-        for pattern in patterns:
-            m = re.search(pattern, text, flags=re.IGNORECASE)
-            if m:
-                return m.group(1).strip()
-        return None
-
-    def _extract_budget(self, text: str) -> str | None:
-        patterns = [
-            r"\$[\d,]+(?:\.\d+)?",
-            r"budget of ([^.]+)",
-            r"budget is ([^.]+)",
-        ]
-        for pattern in patterns:
-            m = re.search(pattern, text, flags=re.IGNORECASE)
-            if m:
-                return (m.group(1) if m.lastindex else m.group(0)).strip()
-        return None
-
-    def _extract_next_steps(self, text: str) -> list[str]:
-        steps = []
-        patterns = [
-            r"next step(?:s)?[:\-]?\s*([^.]+)",
-            r"we will ([^.]+)",
-            r"follow up on ([^.]+)",
-        ]
-        for pattern in patterns:
-            for m in re.finditer(pattern, text, flags=re.IGNORECASE):
-                value = m.group(1).strip()
-                if value and value not in steps:
-                    steps.append(value)
-        return steps
+        return dict(_EMPTY)

@@ -105,6 +105,7 @@ async def websocket_transcribe(websocket: WebSocket):
     Client sends binary audio chunks, server returns JSON with transcribed text.
     """
     await websocket.accept()
+    print(f"[WebSocket] New client connected")
 
     session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     active_transcripts[session_id] = []
@@ -112,7 +113,9 @@ async def websocket_transcribe(websocket: WebSocket):
 
     # Send session info to client
     await websocket.send_json({"type": "session_start", "session_id": session_id})
+    print(f"[WebSocket] Session started: {session_id}")
 
+    chunk_count = 0
     try:
         while True:
             # Receive binary audio chunk from browser
@@ -120,6 +123,9 @@ async def websocket_transcribe(websocket: WebSocket):
 
             if not audio_data:
                 continue
+            
+            chunk_count += 1
+            print(f"[WebSocket] Chunk {chunk_count} received: {len(audio_data)} bytes")
 
             # Run transcription in thread pool to avoid blocking
             loop = asyncio.get_event_loop()
@@ -131,6 +137,7 @@ async def websocket_transcribe(websocket: WebSocket):
                 timestamp = datetime.now().strftime("%H:%M:%S")
                 entry = {"time": timestamp, "text": text}
                 active_transcripts[session_id].append(entry)
+                print(f"[WebSocket] Transcription: {text}")
 
                 # Send transcription back to client
                 await websocket.send_json({
@@ -139,12 +146,16 @@ async def websocket_transcribe(websocket: WebSocket):
                     "time": timestamp,
                     "text": text,
                 })
+            else:
+                print(f"[WebSocket] No text returned from transcription service")
 
     except WebSocketDisconnect:
-        print(f"[Server] Client disconnected. Session: {session_id}")
+        print(f"[WebSocket] Client disconnected. Session: {session_id}, Total chunks: {chunk_count}")
         await websocket.close()
     except Exception as e:
-        print(f"[Server] Error: {e}")
+        print(f"[WebSocket] Error: {e}")
+        import traceback
+        traceback.print_exc()
         try:
             await websocket.close()
         except Exception:
