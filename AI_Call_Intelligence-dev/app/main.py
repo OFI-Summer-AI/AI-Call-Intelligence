@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 from app.config import UPLOAD_DIR
 from app.logger import setup_logging, get_logger
-from app.orchestrator.pipeline import Pipeline
+from app.pipeline.pipeline import Pipeline
 from app.services.audio_extractor import _resolve_ffmpeg_binary
 
 SUPPORTED_EXTENSIONS = {".mp4", ".webm", ".mkv", ".mov", ".avi", ".wav", ".mp3", ".m4a"}

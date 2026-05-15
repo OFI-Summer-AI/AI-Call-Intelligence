@@ -1,11 +1,17 @@
 """
 Playwright-based meeting bot.
 
-Joins Zoom / Google Meet / Microsoft Teams in a headed Chromium browser,
-records system audio via ffmpeg WASAPI loopback while the meeting runs,
-then returns the path to the saved WAV recording.
+Joins Zoom / Google Meet / Microsoft Teams in a headed Chrome browser,
+intercepts the WebRTC audio stream via an injected MediaRecorder (no
+WASAPI loopback needed), and saves a WAV recording after the meeting.
+
+Echo fix: --mute-audio silences Chrome's speaker output so the bot's
+browser never plays audio through the user's physical speakers.
+Audio is captured directly from the WebRTC peer-connection tracks and
+shipped to Python as base64 WebM chunks via expose_function.
 """
 
+import base64
 import os
 import subprocess
 import time
@@ -27,11 +33,82 @@ BOT_NAME = os.getenv("BOT_NAME", "AI Notetaker")
 JOIN_TIMEOUT_MS = 30_000
 PAGE_TIMEOUT_MS = 60_000
 
+GOOGLE_ACCOUNT_EMAIL    = os.getenv("GOOGLE_ACCOUNT_EMAIL", "")
+GOOGLE_ACCOUNT_PASSWORD = os.getenv("GOOGLE_ACCOUNT_PASSWORD", "")
+
+# ---------------------------------------------------------------------------
+# JS injected into every page — intercepts RTCPeerConnection audio tracks
+# and ships them to Python via window.pyReceiveAudioChunk(base64_webm_chunk).
+#
+# Echo prevention: instead of --mute-audio (which breaks the AudioContext),
+# each incoming track is split: one path goes to the speaker through a
+# gain=0 node (completely silent), the other path goes to the MediaRecorder
+# at full volume. No echo, full-fidelity recording.
+# ---------------------------------------------------------------------------
+_WEBRTC_CAPTURE_SCRIPT = r"""
+(function () {
+    var OrigPC = window.RTCPeerConnection;
+    if (!OrigPC) return;
+
+    var audioCtx = null, silentGain = null, mergedDest = null, recorder = null;
+
+    function ensureCtx() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        // silentGain routes audio to ctx.destination at volume 0 — prevents echo
+        // without breaking the AudioContext render loop.
+        silentGain = audioCtx.createGain();
+        silentGain.gain.value = 0;
+        silentGain.connect(audioCtx.destination);
+        mergedDest = audioCtx.createMediaStreamDestination();
+    }
+
+    function addTrack(track) {
+        ensureCtx();
+        try {
+            var s = new MediaStream([track]);
+            var src = audioCtx.createMediaStreamSource(s);
+            src.connect(silentGain);   // to speaker, gain=0 → silent (no echo)
+            src.connect(mergedDest);   // to recorder, full volume
+        } catch (e) {}
+    }
+
+    function startRecorder() {
+        if (recorder || !mergedDest) return;
+        var mimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+        var mime = mimes.find(function(m) { return MediaRecorder.isTypeSupported(m); }) || '';
+        recorder = new MediaRecorder(mergedDest.stream, mime ? { mimeType: mime } : {});
+        recorder.ondataavailable = function (e) {
+            if (!e.data || e.data.size === 0) return;
+            e.data.arrayBuffer().then(function (buf) {
+                var u8 = new Uint8Array(buf);
+                var s = '', chunk = 8192;
+                for (var i = 0; i < u8.length; i += chunk)
+                    s += String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + chunk, u8.length)));
+                try { window.pyReceiveAudioChunk(btoa(s)); } catch (_) {}
+            }).catch(function() {});
+        };
+        recorder.start(2000);
+    }
+
+    window.RTCPeerConnection = function () {
+        var pc = new (Function.prototype.bind.apply(OrigPC, [null].concat(Array.prototype.slice.call(arguments))))();
+        pc.addEventListener('track', function (e) {
+            if (e.track.kind !== 'audio') return;
+            addTrack(e.track);
+            setTimeout(startRecorder, 300);
+        });
+        return pc;
+    };
+    window.RTCPeerConnection.prototype = OrigPC.prototype;
+    Object.defineProperty(window.RTCPeerConnection, 'name', { value: 'RTCPeerConnection' });
+})();
+"""
+
 
 def _safe_filename(title: str) -> str:
-    """Convert meeting title to a filename-safe string (no spaces or special chars)."""
-    name = re.sub(r"[^\w]", "_", title)          # replace all non-alphanumeric with _
-    name = re.sub(r"_+", "_", name).strip("_")   # collapse multiple underscores
+    name = re.sub(r"[^\w]", "_", title)
+    name = re.sub(r"_+", "_", name).strip("_")
     return name[:40]
 
 
@@ -62,116 +139,119 @@ class MeetingBot:
             event.source, event.title, event.platform, duration_secs, filename,
         )
 
-        ffmpeg_proc = self._start_audio_recording(output_path)
-        try:
-            self._run_browser_session(event, duration_secs)
-        finally:
-            self._stop_audio_recording(ffmpeg_proc, output_path)
-
+        self._run_browser_session(event, duration_secs, output_path)
         return output_path
 
     # ------------------------------------------------------------------
-    # Audio recording via ffmpeg WASAPI loopback
+    # Audio: convert accumulated WebM chunks → WAV
     # ------------------------------------------------------------------
 
-    def _start_audio_recording(self, output_path: Path) -> subprocess.Popen:
+    def _save_webm_as_wav(self, chunks: list, output_path: Path) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Try WASAPI loopback first (captures all system audio output)
-        # Empty string "" = default render device loopback
-        cmd = [
-            self._ffmpeg, "-y",
-            "-f", "wasapi",
-            "-loopback",
-            "-i", "",
-            "-ar", "16000",
-            "-ac", "1",
-            str(output_path),
-        ]
-        logger.info("Starting WASAPI loopback audio capture -> %s", output_path.name)
-
-        proc = subprocess.Popen(
-            cmd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        time.sleep(2)  # wait for ffmpeg to open the device
-
-        # Check it actually started
-        if proc.poll() is not None:
-            stderr = proc.stderr.read().decode(errors="ignore")
-            logger.warning("WASAPI loopback failed, retrying with device index 0: %s", stderr[:200])
-            # Fallback: try with explicit device index
-            cmd[cmd.index("")] = "0"
-            proc = subprocess.Popen(
-                cmd,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            time.sleep(2)
-
-        if proc.poll() is not None:
-            stderr = proc.stderr.read().decode(errors="ignore")
-            logger.error("Audio capture failed to start: %s", stderr[:300])
-        else:
-            logger.info("Audio capture running (pid=%d)", proc.pid)
-
-        return proc
-
-    def _stop_audio_recording(self, proc: subprocess.Popen, output_path: Path) -> None:
-        if proc.poll() is None:
-            try:
-                proc.stdin.write(b"q")
-                proc.stdin.flush()
-            except Exception:
-                proc.terminate()
-            try:
-                proc.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-
-        size_kb = output_path.stat().st_size // 1024 if output_path.exists() else 0
-        if size_kb == 0:
+        if not chunks:
             logger.warning(
-                "Recording is 0 KB — WASAPI loopback may not be supported on this device. "
-                "Check that 'Stereo Mix' or a loopback device is enabled in Windows Sound settings."
+                "No audio chunks received from WebRTC capture — "
+                "the meeting may have ended before any audio tracks were created, "
+                "or the browser muted audio before the recorder could start."
             )
+            output_path.write_bytes(b"")
+            return
+
+        webm_path = output_path.with_suffix(".webm")
+        webm_path.write_bytes(b"".join(chunks))
+        total_kb = webm_path.stat().st_size // 1024
+        logger.info("WebM audio accumulated: %d KB — converting to WAV", total_kb)
+
+        result = subprocess.run(
+            [self._ffmpeg, "-y", "-i", str(webm_path),
+             "-ar", "16000", "-ac", "1", str(output_path)],
+            capture_output=True, text=True,
+        )
+        if result.returncode == 0:
+            logger.info("WAV conversion OK: %s", output_path.name)
+            webm_path.unlink(missing_ok=True)
         else:
-            logger.info("Audio recording saved — %d KB at %s", size_kb, output_path.name)
+            logger.error("WAV conversion failed:\n%s", result.stderr[-400:])
+            webm_path.rename(output_path)   # keep audio even if conversion fails
 
     # ------------------------------------------------------------------
     # Browser session
     # ------------------------------------------------------------------
 
-    def _run_browser_session(self, event: MeetingEvent, duration_secs: int) -> None:
-        with sync_playwright() as pw:
-            browser = pw.chromium.launch(
-                headless=False,
-                args=[
-                    "--use-fake-ui-for-media-stream",
-                    "--disable-blink-features=AutomationControlled",
-                    "--no-sandbox",
-                ],
-            )
-            context = browser.new_context(
-                permissions=["microphone", "camera"],
-                user_agent=(
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/120.0.0.0 Safari/537.36"
-                ),
-            )
-            page = context.new_page()
+    _BOT_PROFILE_DIR = Path(os.getenv("BOT_PROFILE_DIR", "")) or (
+        Path.home() / ".ai_call_intel_bot_profile"
+    )
 
-            # Track if page closes unexpectedly
+    def _run_browser_session(self, event: MeetingEvent, duration_secs: int,
+                              output_path: Path) -> None:
+        _LAUNCH_ARGS = [
+            "--use-fake-ui-for-media-stream",
+            "--disable-blink-features=AutomationControlled",
+            "--no-sandbox",
+            "--disable-infobars",
+            "--disable-dev-shm-usage",
+            "--disable-setuid-sandbox",
+            "--ignore-certificate-errors",
+            "--allow-running-insecure-content",
+            # Echo is prevented by the JS gain=0 node in _WEBRTC_CAPTURE_SCRIPT,
+            # NOT by --mute-audio. That flag disables the Web Audio render pipeline
+            # entirely and causes the AudioContext to produce silence.
+        ]
+
+        profile_dir = str(self._BOT_PROFILE_DIR)
+        self._BOT_PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+        logger.info("Using bot Chrome profile: %s", profile_dir)
+
+        audio_chunks: list = []
+
+        def _on_audio_chunk(b64_chunk: str) -> None:
+            try:
+                audio_chunks.append(base64.b64decode(b64_chunk))
+            except Exception as exc:
+                logger.warning("Audio chunk decode error: %s", exc)
+
+        with sync_playwright() as pw:
+            context = None
+            for channel in ("chrome", "msedge", None):
+                try:
+                    kwargs = dict(
+                        user_data_dir=profile_dir,
+                        headless=False,
+                        args=_LAUNCH_ARGS,
+                        permissions=["microphone", "camera"],
+                    )
+                    if channel:
+                        context = pw.chromium.launch_persistent_context(channel=channel, **kwargs)
+                    else:
+                        context = pw.chromium.launch_persistent_context(**kwargs)
+                    logger.info("Persistent context launched via %s", channel or "bundled-chromium")
+                    break
+                except Exception as exc:
+                    logger.warning("Could not launch %s: %s", channel or "bundled-chromium", exc)
+
+            if context is None:
+                raise RuntimeError("No browser could be launched")
+
+            # Register Python callback so JS can send audio data back
+            context.expose_function("pyReceiveAudioChunk", _on_audio_chunk)
+
+            # Inject automation mask + WebRTC audio interceptor into every page
+            context.add_init_script(
+                "Object.defineProperty(navigator,'webdriver',{get:()=>undefined});"
+                "Object.defineProperty(navigator,'plugins',{get:()=>[1,2,3]});"
+                "Object.defineProperty(navigator,'languages',{get:()=>['en-US','en']});"
+                "window.chrome={runtime:{}};"
+                + _WEBRTC_CAPTURE_SCRIPT
+            )
+
+            page = context.new_page()
             page_closed = [False]
             page.on("close", lambda: page_closed.__setitem__(0, True))
 
             try:
                 if event.platform == "meet":
-                    self._join_google_meet(page, event.join_url, page_closed)
+                    self._join_google_meet(page, event.join_url, page_closed, organizer=False)
                 elif event.platform == "zoom":
                     self._join_zoom(page, event.join_url)
                 elif event.platform == "teams":
@@ -188,19 +268,133 @@ class MeetingBot:
                 logger.error("Browser session error: %s", exc)
             finally:
                 try:
-                    browser.close()
+                    context.close()
                 except Exception:
                     pass
+
+        logger.info("Browser closed — captured %d audio chunks (%.1f KB)",
+                    len(audio_chunks),
+                    sum(len(c) for c in audio_chunks) / 1024)
+        self._save_webm_as_wav(audio_chunks, output_path)
+
+    # ------------------------------------------------------------------
+    # Google account sign-in (kept for reference; not called in guest mode)
+    # ------------------------------------------------------------------
+
+    def _sign_in_google(self, page: Page) -> bool:
+        email    = GOOGLE_ACCOUNT_EMAIL.strip()
+        password = GOOGLE_ACCOUNT_PASSWORD.strip()
+        if not email or not password:
+            return False
+
+        try:
+            page.goto("https://myaccount.google.com/", timeout=15_000)
+            page.wait_for_load_state("domcontentloaded", timeout=10_000)
+            time.sleep(1)
+            if "myaccount.google.com" in page.url and "signin" not in page.url:
+                logger.info("Already signed in to Google — skipping login flow")
+                return True
+        except Exception:
+            pass
+
+        logger.info("Not signed in — attempting Google sign-in for: %s", email)
+        try:
+            page.goto("https://accounts.google.com/signin/v2/identifier", timeout=PAGE_TIMEOUT_MS)
+            page.wait_for_load_state("domcontentloaded", timeout=15_000)
+            time.sleep(2)
+
+            email_sel = None
+            for sel in ["input[type='email']", "#identifierId", "input[name='identifier']"]:
+                try:
+                    page.wait_for_selector(sel, state="visible", timeout=6_000)
+                    email_sel = sel
+                    break
+                except PWTimeout:
+                    continue
+
+            if not email_sel:
+                logger.error("Could not find email input on Google sign-in page. URL: %s", page.url)
+                return False
+
+            page.click(email_sel)
+            page.fill(email_sel, "")
+            page.type(email_sel, email, delay=60)
+            time.sleep(0.5)
+
+            next_clicked = False
+            for sel in ["#identifierNext", "[jsname='LgbsSe']",
+                        "button:has-text('Next')", "input[value='Next']"]:
+                try:
+                    page.click(sel, timeout=4_000)
+                    next_clicked = True
+                    break
+                except PWTimeout:
+                    continue
+            if not next_clicked:
+                page.keyboard.press("Enter")
+
+            time.sleep(2)
+            page.wait_for_load_state("domcontentloaded", timeout=10_000)
+
+            pwd_sel = None
+            for sel in ["input[type='password']", "input[name='Passwd']",
+                        "input[name='password']", "#password input"]:
+                try:
+                    page.wait_for_selector(sel, state="visible", timeout=8_000)
+                    pwd_sel = sel
+                    break
+                except PWTimeout:
+                    continue
+
+            if not pwd_sel:
+                logger.error("Could not find password field. URL: %s", page.url)
+                return False
+
+            page.click(pwd_sel)
+            page.fill(pwd_sel, "")
+            page.type(pwd_sel, password, delay=60)
+            time.sleep(0.5)
+
+            for sel in ["#passwordNext", "[jsname='LgbsSe']",
+                        "button:has-text('Next')", "input[value='Next']"]:
+                try:
+                    page.click(sel, timeout=4_000)
+                    break
+                except PWTimeout:
+                    continue
+            else:
+                page.keyboard.press("Enter")
+
+            time.sleep(3)
+            try:
+                page.wait_for_url(lambda u: "accounts.google.com" not in u, timeout=15_000)
+                return True
+            except PWTimeout:
+                current = page.url
+                if "accounts.google.com" in current:
+                    if any(k in current for k in ("challenge", "2-step", "totp")):
+                        logger.warning("Google 2FA required — approve in the browser window")
+                        try:
+                            page.wait_for_url(lambda u: "accounts.google.com" not in u, timeout=30_000)
+                            return True
+                        except PWTimeout:
+                            pass
+                    return False
+                return True
+
+        except Exception as exc:
+            logger.error("Google sign-in error: %s", exc)
+            return False
 
     # ------------------------------------------------------------------
     # Platform-specific join handlers
     # ------------------------------------------------------------------
 
-    def _join_google_meet(self, page: Page, url: str, page_closed: list) -> None:
-        logger.info("Joining Google Meet: %s", url)
+    def _join_google_meet(self, page: Page, url: str, page_closed: list,
+                          organizer: bool = False) -> None:
+        logger.info("Joining Google Meet (guest): %s", url)
         page.goto(url, timeout=PAGE_TIMEOUT_MS)
 
-        # Wait for page to fully settle
         try:
             page.wait_for_load_state("networkidle", timeout=15_000)
         except PWTimeout:
@@ -210,51 +404,115 @@ class MeetingBot:
             logger.warning("Meet page closed immediately after navigation")
             return
 
-        # Dismiss any "Got it" / "Dismiss" overlays
-        for sel in ["button:has-text('Got it')", "button:has-text('Dismiss')",
-                    "[aria-label='Close']"]:
+        for sel in [
+            "button:has-text('Got it')", "button:has-text('Dismiss')",
+            "[aria-label='Close']", "button:has-text('Use without an account')",
+            "button:has-text('Learn More')",
+            "[aria-label='Close dialog']",
+        ]:
             try:
-                page.click(sel, timeout=2000)
+                page.click(sel, timeout=1500)
+                logger.info("Dismissed banner via: %s", sel)
             except PWTimeout:
                 pass
 
-        # Click "Join as a guest" if present (unauthenticated flow)
-        for sel in ["button:has-text('Join as a guest')", "a:has-text('Join as a guest')"]:
+        time.sleep(1)
+
+        try:
+            content = page.content().lower()
+            if "you can't join this video call" in content or "returning to home screen" in content:
+                logger.error(
+                    "Google Meet hard-blocked join — "
+                    "link may be invalid/expired or guest access is disabled."
+                )
+                return
+        except Exception:
+            pass
+
+        # Guest join — click "Continue without signing in" / "Join as a guest"
+        for sel in [
+            "button:has-text('Continue without signing in')",
+            "button:has-text('Join as a guest')",
+            "a:has-text('Join as a guest')",
+            "button:has-text('Use without an account')",
+        ]:
             try:
                 page.click(sel, timeout=3000)
-                logger.info("Clicked 'Join as a guest'")
-                time.sleep(1)
+                logger.info("Clicked guest entry via: %s", sel)
+                time.sleep(1.5)
                 break
             except PWTimeout:
                 pass
 
-        # Enter name in the pre-join name field (guest flow only)
-        for sel in ["input[placeholder*='name' i]", "input[aria-label*='name' i]",
-                    "input[aria-label*='Your name' i]"]:
+        # Fill in bot name
+        name_entered = False
+        for sel in [
+            "input[placeholder*='name' i]",
+            "input[aria-label*='name' i]",
+            "input[aria-label*='Your name' i]",
+            "input[type='text']",
+        ]:
             try:
-                field = page.wait_for_selector(sel, timeout=4000)
-                field.triple_click()
-                field.fill(BOT_NAME)
-                logger.info("Entered bot name: %s", BOT_NAME)
+                page.wait_for_selector(sel, state="visible", timeout=5000)
+                page.click(sel)
+                page.fill(sel, "")
+                page.type(sel, BOT_NAME, delay=40)
+                logger.info("Bot name entered: %s", BOT_NAME)
+                name_entered = True
                 break
             except PWTimeout:
-                pass  # signed-in flow has no name field
-
-        # Mute mic and camera
-        for sel in ["[aria-label*='Turn off microphone' i]",
-                    "[data-is-muted='false'][aria-label*='microphone' i]"]:
-            try:
-                page.click(sel, timeout=2000)
-            except PWTimeout:
-                pass
-        for sel in ["[aria-label*='Turn off camera' i]",
-                    "[data-is-muted='false'][aria-label*='camera' i]"]:
-            try:
-                page.click(sel, timeout=2000)
-            except PWTimeout:
                 pass
 
-        # Click join / ask to join
+        if not name_entered:
+            logger.warning("Could not find name field — proceeding anyway")
+
+        time.sleep(2)
+
+        # Mute microphone
+        mic_muted = False
+        for sel in [
+            "[aria-label='Turn off microphone']",
+            "[aria-label*='microphone' i][aria-pressed='true']",
+            "[data-is-muted='false'][aria-label*='microphone' i]",
+            "[jsname='BOHk6d']",
+        ]:
+            try:
+                page.click(sel, timeout=2000)
+                logger.info("Microphone muted via selector: %s", sel)
+                mic_muted = True
+                break
+            except PWTimeout:
+                pass
+        if not mic_muted:
+            try:
+                page.keyboard.press("Control+d")
+                logger.info("Microphone muted via Ctrl+D")
+            except Exception:
+                logger.warning("Could not mute microphone")
+
+        # Mute camera
+        cam_muted = False
+        for sel in [
+            "[aria-label='Turn off camera']",
+            "[aria-label*='camera' i][aria-pressed='true']",
+            "[data-is-muted='false'][aria-label*='camera' i]",
+            "[jsname='R3R6if']",
+        ]:
+            try:
+                page.click(sel, timeout=2000)
+                logger.info("Camera muted via selector: %s", sel)
+                cam_muted = True
+                break
+            except PWTimeout:
+                pass
+        if not cam_muted:
+            try:
+                page.keyboard.press("Control+e")
+                logger.info("Camera muted via Ctrl+E")
+            except Exception:
+                logger.warning("Could not mute camera")
+
+        # Click join
         joined = False
         for sel in ["button:has-text('Ask to join')", "button:has-text('Join now')",
                     "button:has-text('Join')", "[jsname='Qx7uuf']"]:

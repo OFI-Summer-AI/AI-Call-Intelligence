@@ -43,6 +43,7 @@ Use this SOP to evaluate conformance (100 pts total):
 - "individual_improvements": list of strings (up to 3 areas to improve)
 - "call_insights": list of strings (up to 4 key insights or observations from the call)
 - "conclusions": string (1-2 sentence conclusion on call outcomes and overall status)
+- "speaker_scores": list of objects — one per distinguishable speaker (typically 2-4). If speakers are not labelled, infer role from context (e.g. "Sales Rep", "Client"). Each object has these keys: name (string), role (string or null, e.g. sales_rep/client/manager), talk_time_pct (integer 0-100), score (float 0.0-10.0), summary (string, 1 sentence), strengths (list of up to 2 strings), improvements (list of up to 2 strings).
 
 Important: summarize and rewrite in plain English. Do NOT copy raw transcript sentences.
 
@@ -61,15 +62,16 @@ _EMPTY = {
     "individual_score": None, "individual_summary": None,
     "individual_strengths": [], "individual_improvements": [],
     "call_insights": [], "conclusions": None,
+    "speaker_scores": [],
 }
 
 
 class FieldExtractor:
 
     def extract(self, transcript_segments: List[Dict]) -> dict:
-        api_key = os.getenv("GROQ_API_KEY", "")
+        api_key = os.getenv("OPENAI_API_KEY", "")
         if not api_key:
-            logger.error("GROQ_API_KEY not set — skipping LLM field extraction")
+            logger.error("OPENAI_API_KEY not set — skipping LLM field extraction")
             return dict(_EMPTY)
 
         full_text = " ".join(seg.get("text", "") for seg in transcript_segments)
@@ -77,19 +79,20 @@ class FieldExtractor:
             logger.warning("Empty transcript — skipping field extraction")
             return dict(_EMPTY)
 
+        model = os.getenv("LLM_MODEL", "gpt-4o-mini")
         prompt = _PROMPT.format(transcript=full_text[:8000])
 
         try:
-            from groq import Groq
-            client = Groq(api_key=api_key)
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
             response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model=model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
                 max_tokens=1800,
             )
             raw = response.choices[0].message.content.strip()
-            logger.info("Groq raw response (first 300): %s", raw[:300])
+            logger.info("OpenAI raw response (first 300): %s", raw[:300])
 
             # strip markdown code fences if present
             raw = re.sub(r"^```(?:json)?\s*", "", raw)
@@ -104,6 +107,5 @@ class FieldExtractor:
             logger.warning("No JSON object found in LLM response: %s", raw[:300])
         except Exception as exc:
             logger.error("LLM field extraction failed: %s", exc)
-            raise  # re-raise so the caller can surface the error
 
         return dict(_EMPTY)

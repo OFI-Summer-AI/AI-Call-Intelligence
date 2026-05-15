@@ -1,6 +1,35 @@
 import time
 from pathlib import Path
 from app.config import AUDIO_DIR, OUTPUT_DIR, WHISPER_MODEL_SIZE, ENABLE_DIARIZATION
+
+
+def _ts_to_sec(ts: str) -> float:
+    """'HH:MM:SS' → float seconds."""
+    try:
+        h, m, s = ts.split(":")
+        return int(h) * 3600 + int(m) * 60 + int(s)
+    except Exception:
+        return 0.0
+
+
+def _merge_speakers(transcript: list[dict], speaker_segs: list[dict]) -> list[dict]:
+    """
+    Attach the best-matching speaker label to each transcript segment
+    by finding the diarization segment with maximum time overlap.
+    """
+    for seg in transcript:
+        seg_start = _ts_to_sec(seg.get("start", "00:00:00"))
+        seg_end   = _ts_to_sec(seg.get("end",   "00:00:00"))
+        best_speaker, best_overlap = "Speaker_0", 0.0
+        for sp in speaker_segs:
+            sp_start = _ts_to_sec(sp.get("start", "00:00:00"))
+            sp_end   = _ts_to_sec(sp.get("end",   "00:00:00"))
+            overlap  = max(0.0, min(seg_end, sp_end) - max(seg_start, sp_start))
+            if overlap > best_overlap:
+                best_overlap  = overlap
+                best_speaker  = sp["speaker"]
+        seg["speaker"] = best_speaker
+    return transcript
 from app.services.audio_extractor import extract_audio
 from app.services.stt_service import STTService
 from app.services.transcript_cleaner import clean_segments
@@ -43,7 +72,7 @@ class Pipeline:
         cleaned_segments = clean_segments(stt_result["segments"])
         logger.info("Step 2 done (%.1fs) — STT, %d segments", time.perf_counter() - t, len(cleaned_segments))
 
-        # Step 3: Diarization (optional)
+        # Step 3: Diarization (optional) + merge speaker labels into transcript
         speaker_segments = []
         if ENABLE_DIARIZATION:
             t = time.perf_counter()
@@ -51,6 +80,7 @@ class Pipeline:
                 from app.services.diarization_service import DiarizationService
                 diarization_service = DiarizationService()
                 speaker_segments = diarization_service.diarize(audio_path)
+                cleaned_segments = _merge_speakers(cleaned_segments, speaker_segments)
                 logger.info("Step 3 done (%.1fs) — diarization, %d speaker segments", time.perf_counter() - t, len(speaker_segments))
             except Exception as exc:
                 logger.warning("Diarization failed, skipping: %s", exc)

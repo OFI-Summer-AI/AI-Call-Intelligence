@@ -3,529 +3,294 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Call Intelligence - Live Transcription</title>
+    <title>Live Transcription</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: #ffffff;
-            color: #111111;
-            min-height: 100vh;
-            padding: 2rem;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .header h1 {
-            font-size: 2rem;
-            background: linear-gradient(90deg, #a07830, #c9a84c);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .header p {
-            color: #666666;
-            margin-top: 0.5rem;
-        }
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding: 1.5rem;
-            background: #f5f5f5;
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-        }
-        button {
-            padding: 0.8rem 2rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        #startBtn {
-            background: linear-gradient(135deg, #a07830, #c9a84c);
-            color: white;
-        }
-        #startBtn:hover { transform: scale(1.05); }
-        #startBtn:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
-        #stopBtn {
-            background: #ef4444;
-            color: white;
-        }
-        #stopBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-        #status {
-            color: #666666;
-            font-size: 0.9rem;
-            margin-left: auto;
-        }
-        .waveform {
-            height: 4px;
-            background: #e0e0e0;
-            border-radius: 2px;
-            margin-bottom: 1.5rem;
-            overflow: hidden;
-        }
-        .waveform-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #a07830, #c9a84c);
-            transition: width 0.3s;
-        }
-        .transcript-box {
-            background: #f9f9f9;
-            border-radius: 12px;
-            padding: 1.5rem;
-            min-height: 300px;
-            max-height: 500px;
-            overflow-y: auto;
-            border: 1px solid #e0e0e0;
-        }
-        .transcript-entry {
-            padding: 0.6rem 1rem;
-            margin: 0.4rem 0;
-            border-radius: 8px;
-            background: #ffffff;
-            border: 1px solid #e8e8e8;
-            border-left: 3px solid #c9a84c;
-            animation: fadeIn 0.3s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .transcript-time {
-            font-size: 0.75rem;
-            color: #a07830;
-            font-weight: 600;
-        }
-        .transcript-text {
-            font-size: 0.95rem;
-            color: #1f2937;
-            margin-top: 0.2rem;
-        }
-        .placeholder {
-            color: #999999;
-            font-style: italic;
-            text-align: center;
-            padding: 3rem;
-        }
-        .config {
-            margin-top: 1.5rem;
-            padding: 1rem 1.5rem;
-            background: #f5f5f5;
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .config label {
-            color: #555555;
-            font-size: 0.85rem;
-        }
-        .config input {
-            background: #ffffff;
-            border: 1px solid #dddddd;
-            border-radius: 6px;
-            padding: 0.4rem 0.8rem;
-            color: #111111;
-            font-size: 0.85rem;
-        }
-        .config input:focus {
-            outline: none;
-            border-color: #c9a84c;
-        }
-        .config input[type="checkbox"] {
-            accent-color: #c9a84c;
-        }
-        .tab-bar {
-            display: flex;
-            gap: 0;
-            margin-bottom: 1.5rem;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 0.8rem;
-            background: #f5f5f5;
-            color: #555555;
-            border: 1px solid #e0e0e0;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-        .tab-btn:first-child { border-radius: 8px 0 0 8px; }
-        .tab-btn:last-child { border-radius: 0 8px 8px 0; }
-        .tab-btn.active {
-            background: linear-gradient(135deg, #a07830, #c9a84c);
-            color: white;
-            border-color: #c9a84c;
-        }
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
-        .sc-entry {
-            border-left-color: #f97316 !important;
-        }
-        .timer {
-            color: #a07830;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column}
+        .header{padding:20px 28px 0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1e2535;padding-bottom:16px}
+        .header-title{display:flex;align-items:center;gap:10px}
+        .header-title .dot{width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981}
+        .header-title .dot.idle{background:#475569;box-shadow:none}
+        .header-title h1{font-size:1rem;font-weight:700;color:#f1f5f9;letter-spacing:.01em}
+        .header-title span{font-size:.75rem;color:#64748b;margin-left:4px}
+
+        .tab-bar{display:flex;gap:0;padding:0 28px;background:#0f1117;border-bottom:1px solid #1e2535}
+        .tab-btn{padding:12px 24px;font-size:.8rem;font-weight:600;border:none;background:transparent;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.04em;text-transform:uppercase}
+        .tab-btn.active{color:#c9a84c;border-bottom-color:#c9a84c}
+        .tab-btn:hover:not(.active){color:#94a3b8}
+
+        .tab-panel{display:none;flex:1;flex-direction:column;padding:20px 28px;gap:16px}
+        .tab-panel.active{display:flex}
+
+        .controls{display:flex;align-items:center;gap:12px;background:#161b27;border:1px solid #1e2535;border-radius:14px;padding:16px 20px}
+        .btn{display:flex;align-items:center;gap:8px;padding:9px 20px;border:none;border-radius:9px;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.02em}
+        .btn-start{background:linear-gradient(135deg,#c9a84c,#a07830);color:#fff}
+        .btn-start:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px)}
+        .btn-start:disabled{opacity:.4;cursor:not-allowed;transform:none}
+        .btn-stop{background:#1e2535;color:#ef4444;border:1px solid #3f1f1f}
+        .btn-stop:hover:not(:disabled){background:#2d1f1f}
+        .btn-stop:disabled{opacity:.4;cursor:not-allowed}
+        .btn-green{background:#052e16;color:#4ade80;border:1px solid #14532d}
+        .btn-green:hover:not(:disabled){background:#0f3f1f}
+        .btn-green:disabled{opacity:.4;cursor:not-allowed}
+        .status-text{margin-left:auto;font-size:.8rem;color:#64748b;font-weight:500}
+        .status-ok{color:#4ade80}
+        .status-err{color:#f87171}
+        .status-gold{color:#c9a84c}
+
+        .waveform{height:3px;background:#1e2535;border-radius:2px;overflow:hidden;margin:0}
+        .waveform-inner{height:100%;width:0;background:linear-gradient(90deg,#c9a84c,#10b981);border-radius:2px;transition:width .3s}
+
+        .transcript-box{flex:1;background:#0d1117;border:1px solid #1e2535;border-radius:14px;padding:16px;overflow-y:auto;min-height:280px;max-height:calc(100vh - 320px)}
+        .placeholder{color:#334155;font-size:.85rem;text-align:center;padding:40px 20px;font-style:italic}
+
+        .entry{display:flex;flex-direction:column;gap:4px;padding:10px 14px;margin:6px 0;background:#161b27;border:1px solid #1e2535;border-left:3px solid #c9a84c;border-radius:0 10px 10px 0;animation:slideIn .25s ease}
+        .entry.screen-entry{border-left-color:#3b82f6}
+        @keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+        .entry-time{font-size:.7rem;color:#c9a84c;font-weight:700;font-family:monospace}
+        .entry-text{font-size:.88rem;color:#cbd5e1;line-height:1.5}
+
+        .config-bar{display:flex;align-items:center;gap:16px;background:#161b27;border:1px solid #1e2535;border-radius:12px;padding:12px 18px}
+        .config-label{font-size:.75rem;color:#64748b;font-weight:600;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+        .config-input{background:#0d1117;border:1px solid #2d3748;border-radius:7px;padding:5px 10px;color:#e2e8f0;font-size:.8rem;transition:border-color .2s}
+        .config-input:focus{outline:none;border-color:#c9a84c}
+
+        .timer{font-size:.8rem;font-weight:700;color:#c9a84c;font-family:monospace;margin-left:auto}
+
+        .row{display:flex;align-items:center;gap:10px}
+
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-track{background:#0d1117}
+        ::-webkit-scrollbar-thumb{background:#2d3748;border-radius:2px}
+        ::-webkit-scrollbar-thumb:hover{background:#c9a84c}
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>AI Call Intelligence</h1>
-            <p>Real-time live transcription powered by Whisper</p>
+    <div class="header">
+        <div class="header-title">
+            <div class="dot idle" id="dot"></div>
+            <h1>Live Transcription</h1>
+            <span>Whisper AI</span>
         </div>
+        <div style="font-size:.72rem;color:#334155">ws://localhost:8000</div>
+    </div>
 
-        <div class="tab-bar">
-            <button class="tab-btn active" onclick="switchTab('mic')">Microphone</button>
-            <button class="tab-btn" onclick="switchTab('screen')">Screen Capture</button>
-        </div>
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('mic',this)">Microphone</button>
+        <button class="tab-btn" onclick="switchTab('screen',this)">Screen Capture</button>
+    </div>
 
-        <!-- Mic Tab -->
-        <div id="tab-mic" class="tab-panel active">
+    <!-- Mic Tab -->
+    <div id="tab-mic" class="tab-panel active">
         <div class="controls">
-            <button id="startBtn" onclick="startRecording()">Start Recording</button>
-            <button id="stopBtn" onclick="stopRecording()" disabled>Stop</button>
-            <span id="status">Ready</span>
+            <button class="btn btn-start" id="startBtn" onclick="startRecording()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
+                Start Recording
+            </button>
+            <button class="btn btn-stop" id="stopBtn" onclick="stopRecording()" disabled>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                Stop
+            </button>
+            <span class="status-text" id="status">Ready</span>
         </div>
-
-        <div class="waveform">
-            <div class="waveform-bar" id="waveform-bar"></div>
-        </div>
-
+        <div class="waveform"><div class="waveform-inner" id="waveform-bar"></div></div>
         <div class="transcript-box" id="transcript-box">
-            <p class="placeholder">Click "Start Recording" to begin live transcription...</p>
+            <p class="placeholder">Click "Start Recording" to begin live transcription…</p>
         </div>
-        </div>
+    </div>
 
-        <!-- Screen Capture Tab -->
-        <div id="tab-screen" class="tab-panel">
-        <div class="controls" style="flex-wrap: wrap;">
-            <button id="scStartBtn" onclick="startScreenCapture()" style="background: linear-gradient(135deg, #a07830, #c9a84c); color: white;">Capture Screen Audio</button>
-            <button id="scStopBtn" onclick="stopScreenCapture()" disabled>Stop</button>
-            <button id="scDownloadBtn" onclick="downloadRecording()" disabled style="background: #22c55e; color: white; opacity: 0.5;">Download Recording</button>
-            <span id="scStatus">Ready</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 0 0.5rem;">
-            <label style="color: #555555; font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
-                <input type="checkbox" id="scIncludeMic"> Mix microphone audio
+    <!-- Screen Tab -->
+    <div id="tab-screen" class="tab-panel">
+        <div class="controls" style="flex-wrap:wrap;gap:10px">
+            <button class="btn btn-start" id="scStartBtn" onclick="startScreenCapture()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                Capture Screen
+            </button>
+            <button class="btn btn-stop" id="scStopBtn" onclick="stopScreenCapture()" disabled>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                Stop
+            </button>
+            <button class="btn btn-green" id="scDownloadBtn" onclick="downloadRecording()" disabled>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Save
+            </button>
+            <label style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:#64748b;cursor:pointer">
+                <input type="checkbox" id="scIncludeMic" style="accent-color:#c9a84c">
+                Mix mic
             </label>
-            <span id="scTimer" class="timer" style="margin-left: auto;">00:00:00</span>
+            <span class="timer" id="scTimer">00:00:00</span>
+            <span class="status-text" id="scStatus" style="margin-left:0">Ready</span>
         </div>
-        <div class="waveform">
-            <div class="waveform-bar" id="sc-waveform-bar"></div>
-        </div>
+        <div class="waveform"><div class="waveform-inner" id="sc-waveform-bar"></div></div>
         <div class="transcript-box" id="sc-transcript-box">
-            <p class="placeholder">Select a screen or window to capture its audio. Check "Share audio" when prompted.</p>
+            <p class="placeholder">Share a screen or window — check "Share audio" when prompted.</p>
         </div>
-        </div>
+    </div>
 
-        <div class="config">
-            <label>WebSocket URL:</label>
-            <input type="text" id="wsUrl" value="ws://localhost:8000/ws/transcribe" style="flex:1;">
-            <label>Chunk (ms):</label>
-            <input type="number" id="chunkMs" value="2000" style="width: 80px;">
+    <!-- Config bar -->
+    <div style="padding:0 28px 20px">
+        <div class="config-bar">
+            <span class="config-label">WS URL</span>
+            <input class="config-input" type="text" id="wsUrl" value="ws://localhost:8000/ws/transcribe" style="flex:1">
+            <span class="config-label">Chunk ms</span>
+            <input class="config-input" type="number" id="chunkMs" value="2000" style="width:80px">
         </div>
     </div>
 
     <script>
-        let mediaRecorder;
-        let ws;
-        let isRecording = false;
-        let micChunks = [];
+        let mediaRecorder,ws,isRecording=false,micChunks=[];
+        let scMediaRecorder,scWs,scFullRecorder,scIsRecording=false,scChunks=[],scTimerInterval,scSeconds=0;
 
-        function getApiBase() {
-            const wsUrl = document.getElementById('wsUrl').value;
-            return wsUrl.replace('ws://', 'http://').replace('wss://', 'https://').replace('/ws/transcribe', '');
+        function getBase(){return document.getElementById('wsUrl').value.replace('ws://','http://').replace('wss://','https://').replace('/ws/transcribe','');}
+
+        function setDot(on){var d=document.getElementById('dot');d.className='dot'+(on?'':' idle');}
+
+        function switchTab(tab,btn){
+            document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+            document.getElementById('tab-'+tab).classList.add('active');
+            btn.classList.add('active');
         }
 
-        function uploadToServer(blob, filename, statusEl) {
-            const formData = new FormData();
-            formData.append('file', blob, filename);
-            if (statusEl) statusEl.innerHTML = '<span style="color: #3b82f6;">Saving recording...</span>';
-            fetch(getApiBase() + '/api/upload-recording', { method: 'POST', body: formData })
-                .then(r => r.json())
-                .then(data => {
-                    if (statusEl) statusEl.innerHTML = '<span style="color: #16a34a;">Saved: ' + data.filename + '</span>';
-                })
-                .catch(err => {
-                    if (statusEl) statusEl.innerHTML = '<span style="color: #a07830;">Stopped (server save failed)</span>';
-                    console.error('Upload error:', err);
-                });
+        function uploadToServer(blob,filename,statusEl){
+            var fd=new FormData(); fd.append('file',blob,filename);
+            if(statusEl)statusEl.innerHTML='<span class="status-gold">Saving…</span>';
+            fetch(getBase()+'/api/upload-recording',{method:'POST',body:fd})
+                .then(r=>r.json())
+                .then(d=>{if(statusEl)statusEl.innerHTML='<span class="status-ok">Saved: '+d.filename+'</span>';})
+                .catch(()=>{if(statusEl)statusEl.innerHTML='<span class="status-err">Save failed</span>';});
         }
 
-        // --- Tab switching ---
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            event.target.classList.add('active');
+        // ── Mic ──
+        function startRecording(){
+            var wsUrl=document.getElementById('wsUrl').value;
+            var chunkMs=parseInt(document.getElementById('chunkMs').value)||2000;
+            micChunks=[];
+            navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+                ws=new WebSocket(wsUrl);
+                ws.onopen=()=>{
+                    document.getElementById('status').innerHTML='<span class="status-ok">Recording & Transcribing</span>';
+                    document.getElementById('startBtn').disabled=true;
+                    document.getElementById('stopBtn').disabled=false;
+                    setDot(true);
+                };
+                ws.onmessage=e=>{var d=JSON.parse(e.data);if(d.type==='transcription')addEntry('transcript-box',d.time,d.text,false);};
+                ws.onerror=()=>{document.getElementById('status').innerHTML='<span class="status-err">Connection error — server running?</span>';setDot(false);};
+                ws.onclose=()=>{if(isRecording)stopRecording();};
+                mediaRecorder=new MediaRecorder(stream,{mimeType:'audio/webm;codecs=opus'});
+                mediaRecorder.ondataavailable=e=>{
+                    if(e.data.size>0){
+                        micChunks.push(e.data);
+                        if(ws&&ws.readyState===WebSocket.OPEN)ws.send(e.data);
+                        var bar=document.getElementById('waveform-bar');
+                        bar.style.width=Math.random()*60+40+'%';
+                        setTimeout(()=>bar.style.width='0%',300);
+                    }
+                };
+                mediaRecorder.start(chunkMs);
+                isRecording=true;
+            }).catch(()=>{document.getElementById('status').innerHTML='<span class="status-err">Microphone access denied</span>';});
         }
 
-        // --- Mic recording ---
-        function startRecording() {
-            const wsUrl = document.getElementById('wsUrl').value;
-            const chunkMs = parseInt(document.getElementById('chunkMs').value) || 2000;
-            micChunks = [];
-
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    ws = new WebSocket(wsUrl);
-
-                    ws.onopen = () => {
-                        document.getElementById('status').innerHTML =
-                            '<span style="color: #16a34a;">Recording & Transcribing</span>';
-                        document.getElementById('startBtn').disabled = true;
-                        document.getElementById('stopBtn').disabled = false;
-                    };
-
-                    ws.onmessage = (event) => {
-                        const data = JSON.parse(event.data);
-                        if (data.type === 'transcription') {
-                            addTranscriptEntry(data.time, data.text);
-                        } else if (data.type === 'session_start') {
-                            console.log('Session started:', data.session_id);
-                        }
-                    };
-
-                    ws.onerror = () => {
-                        document.getElementById('status').innerHTML =
-                            '<span style="color: #ef4444;">Connection Error — Is the server running?</span>';
-                    };
-
-                    ws.onclose = () => {
-                        if (isRecording) stopRecording();
-                    };
-
-                    mediaRecorder = new MediaRecorder(stream, {
-                        mimeType: 'audio/webm;codecs=opus'
-                    });
-
-                    mediaRecorder.ondataavailable = (event) => {
-                        if (event.data.size > 0) {
-                            micChunks.push(event.data);
-                            if (ws && ws.readyState === WebSocket.OPEN) {
-                                ws.send(event.data);
-                            }
-                            const bar = document.getElementById('waveform-bar');
-                            bar.style.width = Math.random() * 60 + 40 + '%';
-                            setTimeout(() => bar.style.width = '0%', 300);
-                        }
-                    };
-
-                    mediaRecorder.start(chunkMs);
-                    isRecording = true;
-                })
-                .catch(err => {
-                    document.getElementById('status').innerHTML =
-                        '<span style="color: #ef4444;">Microphone access denied</span>';
-                    console.error('Mic error:', err);
-                });
-        }
-
-        function stopRecording() {
-            isRecording = false;
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(t => t.stop());
-            }
-            if (ws) ws.close();
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('stopBtn').disabled = true;
-            document.getElementById('waveform-bar').style.width = '0%';
-
-            if (micChunks.length > 0) {
-                const blob = new Blob(micChunks, { type: 'audio/webm' });
-                const filename = 'mic_recording_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.webm';
-                uploadToServer(blob, filename, document.getElementById('status'));
+        function stopRecording(){
+            isRecording=false;
+            if(mediaRecorder&&mediaRecorder.state!=='inactive'){mediaRecorder.stop();mediaRecorder.stream.getTracks().forEach(t=>t.stop());}
+            if(ws)ws.close();
+            document.getElementById('startBtn').disabled=false;
+            document.getElementById('stopBtn').disabled=true;
+            document.getElementById('waveform-bar').style.width='0%';
+            setDot(false);
+            if(micChunks.length>0){
+                var blob=new Blob(micChunks,{type:'audio/webm'});
+                uploadToServer(blob,'mic_'+new Date().toISOString().slice(0,19).replace(/:/g,'-')+'.webm',document.getElementById('status'));
             } else {
-                document.getElementById('status').innerHTML =
-                    '<span style="color: #a07830;">Stopped</span>';
+                document.getElementById('status').innerHTML='<span class="status-gold">Stopped</span>';
             }
         }
 
-        function addTranscriptEntry(time, text) {
-            const box = document.getElementById('transcript-box');
-            const placeholder = box.querySelector('.placeholder');
-            if (placeholder) placeholder.remove();
-
-            const entry = document.createElement('div');
-            entry.className = 'transcript-entry';
-            entry.innerHTML = `
-                <div class="transcript-time">${time}</div>
-                <div class="transcript-text">${text}</div>
-            `;
-            box.appendChild(entry);
-            box.scrollTop = box.scrollHeight;
+        function addEntry(boxId,time,text,isScreen){
+            var box=document.getElementById(boxId);
+            var ph=box.querySelector('.placeholder');if(ph)ph.remove();
+            var el=document.createElement('div');
+            el.className='entry'+(isScreen?' screen-entry':'');
+            el.innerHTML='<div class="entry-time">'+time+'</div><div class="entry-text">'+text+'</div>';
+            box.appendChild(el);
+            box.scrollTop=box.scrollHeight;
         }
 
-        // --- Screen Capture ---
-        let scMediaRecorder, scWs, scFullRecorder;
-        let scIsRecording = false;
-        let scChunks = [];
-        let scTimerInterval, scSeconds = 0;
+        // ── Screen ──
+        function fmt(s){return[Math.floor(s/3600),Math.floor((s%3600)/60),s%60].map(n=>String(n).padStart(2,'0')).join(':');}
 
-        function formatTime(s) {
-            const h = String(Math.floor(s / 3600)).padStart(2, '0');
-            const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-            const sec = String(s % 60).padStart(2, '0');
-            return h + ':' + m + ':' + sec;
-        }
-
-        async function startScreenCapture() {
-            const wsUrl = document.getElementById('wsUrl').value;
-            const chunkMs = parseInt(document.getElementById('chunkMs').value) || 2000;
-
-            try {
-                const displayStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: true,
-                    audio: true
-                });
-
-                const audioTracks = displayStream.getAudioTracks();
-                if (audioTracks.length === 0) {
-                    document.getElementById('scStatus').innerHTML =
-                        '<span style="color: #ef4444;">No audio - check "Share audio" when sharing</span>';
-                    displayStream.getTracks().forEach(t => t.stop());
-                    return;
+        async function startScreenCapture(){
+            var wsUrl=document.getElementById('wsUrl').value;
+            var chunkMs=parseInt(document.getElementById('chunkMs').value)||2000;
+            try{
+                var ds=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+                var at=ds.getAudioTracks();
+                if(!at.length){document.getElementById('scStatus').innerHTML='<span class="status-err">No audio — tick "Share audio"</span>';ds.getTracks().forEach(t=>t.stop());return;}
+                var ctx=new AudioContext();
+                var dest=ctx.createMediaStreamDestination();
+                ctx.createMediaStreamSource(new MediaStream(at)).connect(dest);
+                if(document.getElementById('scIncludeMic').checked){
+                    try{var ms=await navigator.mediaDevices.getUserMedia({audio:true});ctx.createMediaStreamSource(ms).connect(dest);}catch(e){}
                 }
-
-                const audioCtx = new AudioContext();
-                const displaySource = audioCtx.createMediaStreamSource(new MediaStream(audioTracks));
-                const destination = audioCtx.createMediaStreamDestination();
-                displaySource.connect(destination);
-
-                if (document.getElementById('scIncludeMic').checked) {
-                    try {
-                        const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        const micSource = audioCtx.createMediaStreamSource(micStream);
-                        micSource.connect(destination);
-                    } catch(e) {
-                        console.warn('Mic not available');
-                    }
-                }
-
-                scWs = new WebSocket(wsUrl);
-                scWs.onopen = () => {
-                    document.getElementById('scStatus').innerHTML =
-                        '<span style="color: #16a34a;">Capturing & Transcribing</span>';
-                    document.getElementById('scStartBtn').disabled = true;
-                    document.getElementById('scStopBtn').disabled = false;
+                scWs=new WebSocket(wsUrl);
+                scWs.onopen=()=>{
+                    document.getElementById('scStatus').innerHTML='<span class="status-ok">Capturing & Transcribing</span>';
+                    document.getElementById('scStartBtn').disabled=true;
+                    document.getElementById('scStopBtn').disabled=false;
+                    setDot(true);
                 };
-                scWs.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'transcription') {
-                        scAddEntry(data.time, data.text);
-                    }
-                };
-                scWs.onerror = () => {
-                    document.getElementById('scStatus').innerHTML =
-                        '<span style="color: #ef4444;">WebSocket error</span>';
-                };
-                scWs.onclose = () => { if (scIsRecording) stopScreenCapture(); };
-
-                scMediaRecorder = new MediaRecorder(destination.stream, {
-                    mimeType: 'audio/webm;codecs=opus'
-                });
-                scMediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0 && scWs && scWs.readyState === WebSocket.OPEN) {
-                        scWs.send(event.data);
-                        const bar = document.getElementById('sc-waveform-bar');
-                        bar.style.width = Math.random() * 60 + 40 + '%';
-                        setTimeout(() => bar.style.width = '0%', 300);
+                scWs.onmessage=e=>{var d=JSON.parse(e.data);if(d.type==='transcription')addEntry('sc-transcript-box',d.time,d.text,true);};
+                scWs.onerror=()=>{document.getElementById('scStatus').innerHTML='<span class="status-err">WebSocket error</span>';};
+                scWs.onclose=()=>{if(scIsRecording)stopScreenCapture();};
+                scMediaRecorder=new MediaRecorder(dest.stream,{mimeType:'audio/webm;codecs=opus'});
+                scMediaRecorder.ondataavailable=e=>{
+                    if(e.data.size>0&&scWs&&scWs.readyState===WebSocket.OPEN){
+                        scWs.send(e.data);
+                        var bar=document.getElementById('sc-waveform-bar');
+                        bar.style.width=Math.random()*60+40+'%';
+                        setTimeout(()=>bar.style.width='0%',300);
                     }
                 };
                 scMediaRecorder.start(chunkMs);
-
-                scChunks = [];
-                scFullRecorder = new MediaRecorder(displayStream, {
-                    mimeType: 'video/webm;codecs=vp9,opus'
-                });
-                scFullRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) scChunks.push(event.data);
-                };
+                scChunks=[];
+                scFullRecorder=new MediaRecorder(ds,{mimeType:'video/webm;codecs=vp9,opus'});
+                scFullRecorder.ondataavailable=e=>{if(e.data.size>0)scChunks.push(e.data);};
                 scFullRecorder.start(1000);
-
-                scSeconds = 0;
-                document.getElementById('scTimer').textContent = '00:00:00';
-                scTimerInterval = setInterval(() => {
-                    scSeconds++;
-                    document.getElementById('scTimer').textContent = formatTime(scSeconds);
-                }, 1000);
-
-                displayStream.getVideoTracks()[0].onended = () => stopScreenCapture();
-                scIsRecording = true;
-
-            } catch(err) {
-                document.getElementById('scStatus').innerHTML =
-                    '<span style="color: #ef4444;">Screen capture denied or not supported</span>';
-                console.error('Screen capture error:', err);
-            }
+                scSeconds=0;
+                document.getElementById('scTimer').textContent='00:00:00';
+                scTimerInterval=setInterval(()=>{scSeconds++;document.getElementById('scTimer').textContent=fmt(scSeconds);},1000);
+                ds.getVideoTracks()[0].onended=()=>stopScreenCapture();
+                scIsRecording=true;
+            }catch(e){document.getElementById('scStatus').innerHTML='<span class="status-err">Screen capture denied</span>';}
         }
 
-        function stopScreenCapture() {
-            scIsRecording = false;
+        function stopScreenCapture(){
+            scIsRecording=false;
             clearInterval(scTimerInterval);
-            if (scMediaRecorder && scMediaRecorder.state !== 'inactive') scMediaRecorder.stop();
-            if (scFullRecorder && scFullRecorder.state !== 'inactive') scFullRecorder.stop();
-            if (scWs) scWs.close();
-            if (scMediaRecorder && scMediaRecorder.stream)
-                scMediaRecorder.stream.getTracks().forEach(t => t.stop());
-            if (scFullRecorder && scFullRecorder.stream)
-                scFullRecorder.stream.getTracks().forEach(t => t.stop());
-
-            document.getElementById('scStatus').innerHTML =
-                '<span style="color: #a07830;">Stopped - ' + formatTime(scSeconds) + ' recorded</span>';
-            document.getElementById('scStartBtn').disabled = false;
-            document.getElementById('scStopBtn').disabled = true;
-            document.getElementById('sc-waveform-bar').style.width = '0%';
-
-            if (scChunks.length > 0) {
-                document.getElementById('scDownloadBtn').disabled = false;
-                document.getElementById('scDownloadBtn').style.opacity = '1';
-                // Auto-save to server
-                const blob = new Blob(scChunks, { type: 'video/webm' });
-                const filename = 'meeting_recording_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.webm';
-                uploadToServer(blob, filename, document.getElementById('scStatus'));
+            if(scMediaRecorder&&scMediaRecorder.state!=='inactive')scMediaRecorder.stop();
+            if(scFullRecorder&&scFullRecorder.state!=='inactive')scFullRecorder.stop();
+            if(scWs)scWs.close();
+            [scMediaRecorder,scFullRecorder].forEach(r=>{if(r&&r.stream)r.stream.getTracks().forEach(t=>t.stop());});
+            document.getElementById('scStatus').innerHTML='<span class="status-gold">Stopped · '+fmt(scSeconds)+'</span>';
+            document.getElementById('scStartBtn').disabled=false;
+            document.getElementById('scStopBtn').disabled=true;
+            document.getElementById('sc-waveform-bar').style.width='0%';
+            setDot(false);
+            if(scChunks.length>0){
+                document.getElementById('scDownloadBtn').disabled=false;
+                var blob=new Blob(scChunks,{type:'video/webm'});
+                uploadToServer(blob,'meeting_'+new Date().toISOString().slice(0,19).replace(/:/g,'-')+'.webm',document.getElementById('scStatus'));
             }
         }
 
-        function downloadRecording() {
-            if (scChunks.length === 0) return;
-            const blob = new Blob(scChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'meeting_recording_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.webm';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function scAddEntry(time, text) {
-            const box = document.getElementById('sc-transcript-box');
-            const placeholder = box.querySelector('.placeholder');
-            if (placeholder) placeholder.remove();
-            const entry = document.createElement('div');
-            entry.className = 'transcript-entry sc-entry';
-            entry.innerHTML = `
-                <div class="transcript-time">${time}</div>
-                <div class="transcript-text">${text}</div>
-            `;
-            box.appendChild(entry);
-            box.scrollTop = box.scrollHeight;
+        function downloadRecording(){
+            if(!scChunks.length)return;
+            var a=document.createElement('a');
+            a.href=URL.createObjectURL(new Blob(scChunks,{type:'video/webm'}));
+            a.download='meeting_'+new Date().toISOString().slice(0,19).replace(/:/g,'-')+'.webm';
+            document.body.appendChild(a);a.click();document.body.removeChild(a);
         }
     </script>
 </body>

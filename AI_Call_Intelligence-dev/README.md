@@ -1,480 +1,282 @@
-# Sales Call Intelligence
+# Clario — Meeting Intelligence
 
-AI-powered Sales Call Intelligence platform for processing MP4 meeting recordings and extracting structured business intelligence from conversations.
-
-The system focuses on:
-
-- Speech-to-text transcription with timestamps
-- Speaker diarization (who spoke what)
-- Client requirement extraction
-- Client pain point identification
-- Tech stack / platform extraction
-- Risk report generation
-- Timestamp-based traceability
-- Future-ready video intelligence support
+AI-powered meeting intelligence platform. Clario joins your meetings as a bot, records audio, transcribes speech, extracts structured business intelligence, scores SOP conformance, and presents everything in a React dashboard.
 
 ---
 
-# Project Objective
+## What It Does
 
-Sales calls often contain critical business and technical information that is:
-- undocumented
-- misunderstood
-- lost across teams
-- difficult to trace later
-
-This project converts raw meeting recordings into structured, searchable, and auditable sales intelligence.
-
----
-
-# Current Scope (MVP)
-
-## Audio Intelligence (Offline Pipeline)
-
-- MP4 upload
-- Audio extraction
-- Timestamped speech-to-text
-- Speaker diarization (optional)
-- Transcript cleaning
-- Sales field extraction
-- Risk report generation
-- Structured JSON output
-
-## Live Transcription (Real-Time)
-
-- Browser-based microphone capture
-- Browser-based screen/meeting capture (OBS alternative)
-- Real-time audio streaming via WebSocket
-- Whisper-powered live transcription
-- Streamlit UI with session history
-- Downloadable meeting recordings
+- **Auto-joins meetings** — Playwright-based Chrome bot joins Google Meet, Zoom, and Teams from your calendar or a manual URL
+- **Records audio** — captures WebRTC audio without echo using a JS gain-node approach
+- **Transcribes** — OpenAI Whisper (`small` model) produces timestamped segments
+- **Speaker diarization** — optional pyannote-based speaker identification
+- **Extracts intelligence** — GPT-4o-mini pulls client name, problem, requirements, tech stack, timeline, budget, next steps, and conformance scores from the transcript
+- **Flags risks** — auto-generated risk report highlights missing or ambiguous information
+- **Dashboard** — React UI with Overview, Requirements, Conformance, Individual, Risks, and Transcript tabs
+- **PDF export** — one-click PDF report per recording
+- **Live transcription** — real-time WebSocket transcription from browser mic or screen capture
 
 ---
 
-# Planned Future Scope
+## Project Structure
 
-## Video Intelligence
-- Key frame extraction
-- Dashboard/chart detection
-- OCR from shared screens
-- Timestamp-linked visual evidence
-
-## Governance & Intelligence
-- Human review workflows
-- Confidence scoring
-- Semantic validation
-- Requirement drift detection
-
----
-
-# High-Level Flow
-
-## Offline Pipeline
-
-```text
-MP4 Upload → Audio Extraction → Speech-to-Text → Speaker Diarization
-   → Transcript Cleaning → Sales Field Extraction → Risk Report → JSON Output
 ```
-
-## Live Transcription
-
-```text
-Browser Mic / Screen Capture
-   ↓
-MediaRecorder API (audio/webm chunks every 1-3s)
-   ↓
-WebSocket
-   ↓
-FastAPI Backend
-   ↓
-Whisper Transcription
-   ↓
-Live Transcript Stream
-   ↓
-Streamlit UI / Browser
-```
-
----
-
-# Project Structure
-
-```text
-AI_Call_Intelligence/
-├── app/
-│   ├── main.py                      # CLI entry point (offline pipeline)
-│   ├── config.py                    # Central configuration
-│   ├── realtime_server.py           # FastAPI WebSocket server (live transcription)
-│   ├── streamlit_app.py             # Streamlit UI
-│   ├── orchestrator/
-│   │   └── pipeline.py              # Offline pipeline orchestrator
-│   ├── services/
-│   │   ├── audio_extractor.py       # FFmpeg audio extraction
-│   │   ├── stt_service.py           # Offline Whisper transcription
-│   │   ├── realtime_stt_service.py  # Real-time Whisper transcription
-│   │   ├── diarization_service.py   # Speaker diarization (pyannote)
-│   │   ├── transcript_cleaner.py    # Transcript cleanup
-│   │   ├── field_extractor.py       # Sales field extraction
-│   │   ├── risk_report_service.py   # Risk report generation
-│   │   ├── storage_service.py       # JSON output storage
-│   │   └── job_service.py           # Job tracking (placeholder)
-│   └── static/
-│       └── live_transcription.html  # Standalone browser UI
-│
-├── data/
-│   ├── uploads/                     # Input video files
-│   ├── audio/                       # Extracted audio
-│   └── outputs/                     # JSON results
-│
+AI_Call_Intelligence-dev/
+├── run.py                        # Start the server (python run.py)
 ├── requirements.txt
-└── README.md
+├── .env                          # All configuration (see below)
+├── credentials.json              # Google OAuth client secret
+├── google_token.json             # Google OAuth token (auto-created)
+│
+├── app/
+│   ├── config.py                 # Loads .env, defines paths
+│   ├── logger.py                 # Logging setup
+│   ├── main.py                   # CLI pipeline runner (offline batch)
+│   ├── main_agent.py             # Meeting agent scheduler entry point
+│   ├── realtime_server.py        # FastAPI app — serves dashboard + API
+│   │
+│   ├── api/
+│   │   └── routes.py             # Agent, calendar, join-now routes
+│   │
+│   ├── pipeline/
+│   │   └── pipeline.py           # Core 6-step analysis pipeline
+│   │
+│   ├── services/
+│   │   ├── audio_extractor.py    # FFmpeg: video → 16 kHz mono WAV
+│   │   ├── stt_service.py        # Whisper full-file transcription
+│   │   ├── realtime_stt_service.py # Whisper live chunk transcription
+│   │   ├── diarization_service.py  # pyannote speaker diarization
+│   │   ├── transcript_cleaner.py   # Trim/normalize segments
+│   │   ├── field_extractor.py    # LLM field + conformance extraction
+│   │   ├── risk_report_service.py  # Risk flag generation
+│   │   ├── storage_service.py    # JSON persistence
+│   │   └── pipeline_runner.py    # Async pipeline wrapper for FastAPI
+│   │
+│   ├── agent/
+│   │   ├── meeting_bot.py        # Playwright Chrome bot (record + join)
+│   │   ├── scheduler.py          # APScheduler calendar-watcher
+│   │   ├── calendar_watcher.py   # Google Calendar + Outlook fetch
+│   │   ├── link_extractor.py     # Meeting URL detection (Meet/Zoom/Teams)
+│   │   └── auto_leave.py         # Auto-leave on participant drop
+│   │
+│   ├── requirements/             # Requirements extraction subsystem
+│   │   ├── extraction.py
+│   │   ├── embedding.py
+│   │   ├── ingestion.py
+│   │   ├── scoring.py
+│   │   └── reporting.py
+│   │
+│   └── static/
+│       ├── index.html            # Dashboard entry
+│       ├── app.jsx               # React source
+│       ├── app.js                # Compiled React (served at runtime)
+│       └── live_transcription.html  # Standalone WebSocket live UI
+│
+└── data/
+    ├── uploads/                  # Uploaded / bot-recorded files
+    ├── audio/                    # Extracted WAV files
+    └── outputs/                  # JSON results (*_result.json)
 ```
 
 ---
-
-# Core Modules
-
-## `pipeline.py`
-
-Main orchestrator responsible for:
-
-- coordinating the full workflow
-- calling services in sequence
-- managing processing flow
-
----
-
-## `audio_extractor.py`
-
-Responsible for:
-
-- extracting audio from MP4
-- audio conversion
-- audio preprocessing
-
----
-
-## `stt_service.py`
-
-Responsible for:
-
-- speech-to-text conversion
-- timestamp generation
-- transcript generation
-
----
-
-## `diarization_service.py`
-
-Responsible for:
-
-- speaker segmentation
-- speaker labeling
-- identifying speaker timelines
-
----
-
-## `transcript_cleaner.py`
-
-Responsible for:
-
-- transcript formatting
-- punctuation cleanup
-- transcript normalization
-
----
-
-## `field_extractor.py`
-
-Responsible for extracting:
-
-- client name
-- client problem
-- strict requirements
-- platforms/tech stack
-- timelines
-- dependencies
-- action items
-
----
-
-## `risk_report_service.py`
-
-Responsible for generating:
-
-- missing clarification points
-- ambiguous requirements
-- delivery risks
-- commercial risks
-- technical concerns
-
----
-
-# Example Transcript Output
-
-```json
-[
-  {
-    "start": "00:01:12",
-    "end": "00:01:18",
-    "speaker": "Speaker_1",
-    "text": "We need SAP integration in phase one."
-  }
-]
-```
-
----
-
-# Example Structured Output
-
-```json
-{
-  "client_name": "ABC Corp",
-  "client_problem": "Manual reporting delays",
-  "strict_requirements": [
-    "SAP integration",
-    "15-minute dashboard refresh"
-  ],
-  "techstack_platform": [
-    "SAP",
-    "Power BI"
-  ],
-  "risk_report": [
-    "Timeline not fully confirmed",
-    "API ownership unclear"
-  ]
-}
-```
-
----
-
-# Technology Stack
-
-| Component            | Technology              |
-| -------------------- | ----------------------- |
-| Backend API          | FastAPI + WebSocket     |
-| Speech-to-Text       | OpenAI Whisper          |
-| Speaker Diarization  | Pyannote                |
-| Real-Time UI         | Streamlit               |
-| Audio Capture        | MediaRecorder API       |
-| Screen Capture       | Screen Capture API      |
-| Server               | Uvicorn                 |
-| File Storage         | Local filesystem        |
-
----
-
-# Installation
 
 ## Prerequisites
 
-- **Python 3.10+**
-- **FFmpeg** installed and available on PATH ([download](https://ffmpeg.org/download.html))
-- A modern browser (Chrome, Edge, or Firefox) for live transcription
+- Python 3.10+
+- [FFmpeg](https://ffmpeg.org/download.html) — set `FFMPEG_PATH` in `.env` or add to PATH
+- Google Chrome — required for the meeting bot
+- An OpenAI API key — for LLM field extraction
+- Node.js (optional) — only needed to recompile `app.jsx` after edits
 
-## Clone Repository
+---
+
+## Installation
 
 ```bash
 git clone https://github.com/OFI-Summer-AI/AI_Call_Intelligence.git
-cd AI_Call_Intelligence
-```
+cd AI_Call_Intelligence/AI_Call_Intelligence-dev
 
----
-
-## Create Virtual Environment
-
-```bash
 python -m venv venv
-source venv/bin/activate
-```
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # macOS / Linux
 
-Windows:
-
-```bash
-venv\Scripts\activate
-```
-
----
-
-## Install Dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
 ---
 
-## Environment Variables (Optional)
+## Configuration
 
-Create a `.env` file in the project root to customize settings:
+Copy or edit `.env` in the project root:
 
 ```env
-# Whisper model size: tiny, base, small, medium, large
-WHISPER_MODEL_SIZE=base
+# ── Pipeline ──────────────────────────────────────────────
+WHISPER_MODEL_SIZE=small          # tiny | base | small | medium | large
+ENABLE_DIARIZATION=false          # true requires DIARIZATION_HF_TOKEN
+DIARIZATION_HF_TOKEN=             # HuggingFace token (pyannote access)
+FFMPEG_PATH=                      # Full path to ffmpeg.exe (or leave blank if on PATH)
 
-# Speaker diarization (requires HuggingFace token)
-ENABLE_DIARIZATION=false
-DIARIZATION_HF_TOKEN=your_huggingface_token_here
+# ── LLM ───────────────────────────────────────────────────
+OPENAI_API_KEY=sk-...
+LLM_MODEL=gpt-4o-mini
 
-# Field extraction confidence threshold
-CONFIDENCE_THRESHOLD=0.80
+# ── Google Calendar ────────────────────────────────────────
+ENABLE_GOOGLE_CALENDAR=true
+GOOGLE_CREDENTIALS_FILE=credentials.json
+GOOGLE_TOKEN_FILE=google_token.json
+
+# ── Microsoft Outlook ──────────────────────────────────────
+ENABLE_OUTLOOK_CALENDAR=false
+MICROSOFT_CLIENT_ID=
+MICROSOFT_TENANT_ID=common
+
+# ── Bot behaviour ──────────────────────────────────────────
+BOT_NAME=Clario
+JOIN_EARLY_SECONDS=120            # join N seconds before meeting starts
+CALENDAR_POLL_INTERVAL=5          # poll calendar every N minutes
+BOT_GRACE_SECONDS=30              # wait N seconds after all leave before stopping
+
+# ── Google account (bot signs in to Meet) ──────────────────
+GOOGLE_ACCOUNT_EMAIL=your@gmail.com
+GOOGLE_ACCOUNT_PASSWORD=yourpassword
 ```
-
-If no `.env` file exists, the app uses sensible defaults.
 
 ---
 
-# Running the Application
+## Running
 
-## Option 1: Offline Pipeline (process a video file)
+### Start the dashboard + API server
+
+```bash
+python run.py
+```
+
+Open **http://localhost:8000** in your browser.
+
+### Process a recording from the command line
 
 ```bash
 python -m app.main --input path/to/meeting.mp4
+python -m app.main --batch                        # process all files in data/uploads/
 ```
 
-Without `--input`, it processes `data/uploads/client_call_01.mp4` by default.
+### Start the calendar-watcher scheduler (auto-join mode)
+
+```bash
+python -m app.main_agent
+```
+
+The scheduler polls your calendar and automatically joins upcoming meetings.
 
 ---
 
-## Option 2: Live Transcription (real-time)
+## Analysis Pipeline
 
-This requires **two terminals**:
-
-### Terminal 1 - Start the FastAPI WebSocket server
-
-```bash
-python -m app.realtime_server
-```
-
-The server starts on `http://localhost:8000`. On first run, Whisper downloads the model (~140 MB for `base`).
-
-### Terminal 2 - Start the Streamlit UI
-
-```bash
-streamlit run app/streamlit_app.py
-```
-
-Opens at `http://localhost:8501`.
-
-### Using the UI
-
-1. Open `http://localhost:8501` in your browser
-2. Choose a tab:
-   - **Live Recording** -- captures microphone audio
-   - **Screen Capture** -- captures system audio from any meeting app (Teams, Zoom, Meet). Check "Share audio" when prompted. Optionally mix your microphone. Download the full recording when done.
-3. Click **Start** and speak or share your meeting window
-4. Live transcript appears in real-time
-5. View past sessions in the **Session History** tab
-
-### Standalone HTML (no Streamlit needed)
-
-With the FastAPI server running, open:
+Each recording goes through 6 steps:
 
 ```
-http://localhost:8000/static/live_transcription.html
+Upload / Bot Recording
+      ↓
+1. Audio Extraction      FFmpeg → 16 kHz mono WAV
+      ↓
+2. Transcription         Whisper → timestamped segments
+      ↓
+3. Diarization           pyannote → speaker labels (optional)
+      ↓
+4. Field Extraction      GPT-4o-mini → client, requirements, scores
+      ↓
+5. Risk Report           Rule-based → flags missing / ambiguous info
+      ↓
+6. Save Output           JSON → data/outputs/*_result.json
 ```
 
 ---
 
-# API Endpoints (Live Server)
+## API Reference
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/health` | Server health check |
-| `GET` | `/api/transcripts` | All session transcripts |
-| `GET` | `/api/transcripts/{session_id}` | Single session transcript |
-| `WS` | `/ws/transcribe` | WebSocket for live audio streaming |
+| `GET` | `/health` | Server health + Whisper model info |
+| `GET` | `/api/recordings` | List all analyzed recordings |
+| `GET` | `/api/recordings/{job_id}` | Get a single recording |
+| `POST` | `/api/recordings/{job_id}/reanalyze` | Re-run LLM extraction |
+| `GET` | `/api/recordings/{job_id}/pdf` | Download PDF report |
+| `POST` | `/api/upload-recording` | Upload a media file |
+| `POST` | `/api/process?filename=` | Trigger pipeline on uploaded file |
+| `GET` | `/api/process-status/{job_id}` | Check processing status |
+| `GET` | `/api/upcoming-meetings` | Fetch calendar meetings (next 24 h) |
+| `POST` | `/api/join-now` | Start bot for a meeting URL |
+| `GET` | `/api/agent-status` | Bot current status |
+| `POST` | `/api/agent-start` | Start the calendar-watcher scheduler |
+| `POST` | `/api/agent-stop` | Stop the agent |
+| `WS` | `/ws/transcribe` | WebSocket live audio transcription |
 
 ---
 
-# Processing Pipeline
+## Dashboard Tabs
 
-## Step 1 — MP4 Upload
-
-Store uploaded file and create job ID.
-
-## Step 2 — Audio Extraction
-
-Extract audio track from video.
-
-## Step 3 — Speech-to-Text
-
-Generate timestamped transcript.
-
-## Step 4 — Speaker Diarization
-
-Identify speaker segments.
-
-## Step 5 — Transcript Cleaning
-
-Normalize transcript structure.
-
-## Step 6 — Sales Intelligence Extraction
-
-Extract business-critical information.
-
-## Step 7 — Risk Report Generation
-
-Generate clarification and risk insights.
-
-## Step 8 — Save Final Output
-
-Store transcript and structured intelligence.
+| Tab | Content |
+|-----|---------|
+| **Overview** | Client, problem, timeline, budget, summary, highlights, next steps |
+| **Requirements** | Searchable list of extracted requirements |
+| **Conformance** | SOP score (0–100), passed / missed criteria |
+| **Individual** | Per-speaker scores, conformance breakdown |
+| **Risks** | Risk flags, needs-review status |
+| **Transcript** | Full timestamped transcript with activity chart |
 
 ---
 
-# Future Enhancements
+## Enabling Speaker Diarization
 
-## Audio Intelligence
-
-- sentiment analysis
-- confidence scoring
-- semantic validation
-
-## Video Intelligence
-
-- frame summarization
-- OCR extraction
-- dashboard detection
-- architecture diagram capture
-
-## Governance
-
-- human review workflows
-- audit trails
-- versioning
-- requirement drift detection
+1. Accept model terms at [huggingface.co/pyannote/speaker-diarization-3.1](https://huggingface.co/pyannote/speaker-diarization-3.1)
+2. Create a token at huggingface.co/settings/tokens
+3. Add to `.env`:
+   ```env
+   ENABLE_DIARIZATION=true
+   DIARIZATION_HF_TOKEN=hf_your_token_here
+   ```
 
 ---
 
-# Design Principles
+## Enabling Google Calendar
 
-- Simple orchestrator architecture
-- Modular services
-- Production-ready structure
-- Traceability via timestamps
-- Extensible for multimodal AI
-- Avoid overengineering in MVP
-
----
-
-# Future Vision
-
-The long-term goal is to build a multimodal conversational intelligence platform capable of understanding:
-
-- sales calls
-- client meetings
-- project KT sessions
-- internal discussions
-- interview recordings
-
-using:
-
-- audio intelligence
-- video intelligence
-- semantic reasoning
-- enterprise governance workflows
+1. Create a project at [console.cloud.google.com](https://console.cloud.google.com)
+2. Enable the **Google Calendar API**
+3. Create OAuth 2.0 credentials (Desktop app) → download as `credentials.json`
+4. Place `credentials.json` in the project root
+5. Set `ENABLE_GOOGLE_CALENDAR=true` in `.env`
+6. Run `python -m app.main_agent` — a browser window opens for one-time OAuth consent
 
 ---
 
-# License
+## Recompiling the Frontend
 
-Internal Research / Enterprise Use
+If you edit `app/static/app.jsx`:
+
+```bash
+cd app/static
+npx babel app.jsx --presets @babel/preset-react --out-file app.js
+```
+
+---
+
+## Technology Stack
+
+| Component | Technology |
+|-----------|------------|
+| Backend API | FastAPI + Uvicorn |
+| WebSocket | FastAPI WebSocket |
+| Speech-to-Text | OpenAI Whisper |
+| LLM Extraction | OpenAI GPT-4o-mini |
+| Speaker Diarization | pyannote-audio 4.x |
+| Meeting Bot | Playwright (Chrome) |
+| Calendar | Google Calendar API, Microsoft Graph |
+| Frontend | React + Recharts + Tailwind CSS |
+| Audio Processing | FFmpeg |
+| PDF Generation | fpdf2 |
+
+---
+
+## License
+
+Internal use — OFI

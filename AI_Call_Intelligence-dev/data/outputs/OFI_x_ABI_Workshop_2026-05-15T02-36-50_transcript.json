@@ -1,0 +1,475 @@
+{
+  "language": "en",
+  "segments": [
+    {
+      "start": "00:00:00",
+      "end": "00:00:02",
+      "text": "you"
+    },
+    {
+      "start": "00:00:30",
+      "end": "00:00:32",
+      "text": "you"
+    },
+    {
+      "start": "00:01:00",
+      "end": "00:01:02",
+      "text": "you"
+    },
+    {
+      "start": "00:01:30",
+      "end": "00:01:32",
+      "text": "you"
+    },
+    {
+      "start": "00:04:00",
+      "end": "00:04:04",
+      "text": "Hi."
+    },
+    {
+      "start": "00:04:19",
+      "end": "00:04:21",
+      "text": "Hey."
+    },
+    {
+      "start": "00:04:26",
+      "end": "00:04:29",
+      "text": "Hi."
+    },
+    {
+      "start": "00:04:30",
+      "end": "00:04:37",
+      "text": "Yes, you are audible."
+    },
+    {
+      "start": "00:04:37",
+      "end": "00:04:40",
+      "text": "Hi, Ashutthi Dhali."
+    },
+    {
+      "start": "00:04:40",
+      "end": "00:04:46",
+      "text": "Hope you are doing well so far."
+    },
+    {
+      "start": "00:04:46",
+      "end": "00:04:48",
+      "text": "Hi, Vishal."
+    },
+    {
+      "start": "00:04:48",
+      "end": "00:04:50",
+      "text": "I hope the same for you."
+    },
+    {
+      "start": "00:04:50",
+      "end": "00:04:53",
+      "text": "Yes, absolutely."
+    },
+    {
+      "start": "00:04:53",
+      "end": "00:04:57",
+      "text": "And thanks again for taking our time today."
+    },
+    {
+      "start": "00:04:57",
+      "end": "00:05:01",
+      "text": "I went through the requirements notes your team shared earlier."
+    },
+    {
+      "start": "00:05:01",
+      "end": "00:05:07",
+      "text": "And honestly, I think this is a really interesting use case for AI-driven automation."
+    },
+    {
+      "start": "00:05:07",
+      "end": "00:05:09",
+      "text": "Definitely."
+    },
+    {
+      "start": "00:05:09",
+      "end": "00:05:13",
+      "text": "Right now, our biggest hearing is that operations are still heavily manual."
+    },
+    {
+      "start": "00:05:13",
+      "end": "00:05:19",
+      "text": "We will spend hours preparing reports, following up on approvals, checking inventory updates manually,"
+    },
+    {
+      "start": "00:05:19",
+      "end": "00:05:23",
+      "text": "and consolidating information from multiple systems."
+    },
+    {
+      "start": "00:05:23",
+      "end": "00:05:25",
+      "text": "Understood."
+    },
+    {
+      "start": "00:05:25",
+      "end": "00:05:30",
+      "text": "So a lot of operational bandwidth is getting consumed and repetitive coordination work"
+    },
+    {
+      "start": "00:05:30",
+      "end": "00:05:35",
+      "text": "instead of actual decision making."
+    },
+    {
+      "start": "00:05:35",
+      "end": "00:05:36",
+      "text": "Exactly."
+    },
+    {
+      "start": "00:05:36",
+      "end": "00:05:44",
+      "text": "And as we scale, this is becoming difficult to manage efficiently."
+    },
+    {
+      "start": "00:05:44",
+      "end": "00:05:47",
+      "text": "Makes sense."
+    },
+    {
+      "start": "00:05:47",
+      "end": "00:05:52",
+      "text": "What we are actually envisioning here is not just another dashboarding tool,"
+    },
+    {
+      "start": "00:05:52",
+      "end": "00:05:57",
+      "text": "but an AI-agent-driven operational platform."
+    },
+    {
+      "start": "00:05:57",
+      "end": "00:06:00",
+      "text": "So in SRIVAP employees manually tracking everything,"
+    },
+    {
+      "start": "00:06:00",
+      "end": "00:06:03",
+      "text": "intelligent AI agent can continuously monitor workflows,"
+    },
+    {
+      "start": "00:06:03",
+      "end": "00:06:08",
+      "text": "generate insights, and proactively assist teams."
+    },
+    {
+      "start": "00:06:08",
+      "end": "00:06:09",
+      "text": "That's very cool."
+    },
+    {
+      "start": "00:06:09",
+      "end": "00:06:11",
+      "text": "Can you give an example?"
+    },
+    {
+      "start": "00:06:11",
+      "end": "00:06:13",
+      "text": "Sure."
+    },
+    {
+      "start": "00:06:13",
+      "end": "00:06:18",
+      "text": "So we can take an example of the reporting agent."
+    },
+    {
+      "start": "00:06:18",
+      "end": "00:06:19",
+      "text": "Okay."
+    },
+    {
+      "start": "00:06:19",
+      "end": "00:06:25",
+      "text": "So an AI agent can automatically collect operational data, generate summaries,"
+    },
+    {
+      "start": "00:06:25",
+      "end": "00:06:30",
+      "text": "identify anomalies, and send management 3D reports every morning."
+    },
+    {
+      "start": "00:06:30",
+      "end": "00:06:35",
+      "text": "Similarly, we can also take an example of the inventory agent"
+    },
+    {
+      "start": "00:06:35",
+      "end": "00:06:39",
+      "text": "that can continuously monitor inventory patterns and alert team"
+    },
+    {
+      "start": "00:06:39",
+      "end": "00:06:44",
+      "text": "the core stock shortage happens."
+    },
+    {
+      "start": "00:06:44",
+      "end": "00:06:51",
+      "text": "That would actually save a huge amount of operations effort for us."
+    },
+    {
+      "start": "00:06:51",
+      "end": "00:06:55",
+      "text": "What kind of tech tech would support something like this?"
+    },
+    {
+      "start": "00:06:55",
+      "end": "00:06:58",
+      "text": "Actually, your voice is not clear."
+    },
+    {
+      "start": "00:06:58",
+      "end": "00:07:04",
+      "text": "Oh, like I'm just saying that would actually save a huge amount of operations effort for us."
+    },
+    {
+      "start": "00:07:04",
+      "end": "00:07:09",
+      "text": "Again, your voice is not clear."
+    },
+    {
+      "start": "00:07:09",
+      "end": "00:07:10",
+      "text": "No."
+    },
+    {
+      "start": "00:07:10",
+      "end": "00:07:12",
+      "text": "Is it clear now?"
+    },
+    {
+      "start": "00:07:12",
+      "end": "00:07:17",
+      "text": "No."
+    },
+    {
+      "start": "00:07:17",
+      "end": "00:07:20",
+      "text": "Hello, can you hear me properly now?"
+    },
+    {
+      "start": "00:07:20",
+      "end": "00:07:24",
+      "text": "You're not automatically."
+    },
+    {
+      "start": "00:07:24",
+      "end": "00:07:32",
+      "text": "Like I don't think that we say hi or not."
+    },
+    {
+      "start": "00:07:32",
+      "end": "00:07:33",
+      "text": "Really?"
+    },
+    {
+      "start": "00:07:33",
+      "end": "00:07:34",
+      "text": "No."
+    },
+    {
+      "start": "00:07:34",
+      "end": "00:07:37",
+      "text": "Yeah."
+    },
+    {
+      "start": "00:07:37",
+      "end": "00:07:42",
+      "text": "I was just like saying that would actually save a huge amount of operations effort for us."
+    },
+    {
+      "start": "00:07:42",
+      "end": "00:07:47",
+      "text": "Like what kind of tech tech would support something like this?"
+    },
+    {
+      "start": "00:07:47",
+      "end": "00:07:53",
+      "text": "For the agent architecture, we would suggest the front end,"
+    },
+    {
+      "start": "00:07:53",
+      "end": "00:07:59",
+      "text": "and for the front end, we can use ReactJS or TypeScript Tailwind CSS."
+    },
+    {
+      "start": "00:07:59",
+      "end": "00:08:05",
+      "text": "For the back end, we can use Python, FastAPI, Node, NodeJS microservices,"
+    },
+    {
+      "start": "00:08:05",
+      "end": "00:08:08",
+      "text": "and something like that."
+    },
+    {
+      "start": "00:08:08",
+      "end": "00:08:16",
+      "text": "For the AI layer, we can use OpenAI APIs, LangChain or AI Orchestration Framework,"
+    },
+    {
+      "start": "00:08:16",
+      "end": "00:08:20",
+      "text": "or vector databases for contextual memory."
+    },
+    {
+      "start": "00:08:20",
+      "end": "00:08:26",
+      "text": "And talking of the databases, we can use PostgreSQL, Redis,"
+    },
+    {
+      "start": "00:08:26",
+      "end": "00:08:31",
+      "text": "and for the infrastructure, we can use AWS Docker, Kubernetes."
+    },
+    {
+      "start": "00:08:31",
+      "end": "00:08:39",
+      "text": "This setup allows us to build scalable AI agents that can interact with business systems securely."
+    },
+    {
+      "start": "00:08:39",
+      "end": "00:08:44",
+      "text": "How long would the development take?"
+    },
+    {
+      "start": "00:08:44",
+      "end": "00:08:49",
+      "text": "We would recommend a phase rollout here."
+    },
+    {
+      "start": "00:08:49",
+      "end": "00:08:55",
+      "text": "So, like we have timelines for every phase,"
+    },
+    {
+      "start": "00:08:55",
+      "end": "00:09:01",
+      "text": "for the first discovery in AI agent design, I think at least we require two weeks of time."
+    },
+    {
+      "start": "00:09:01",
+      "end": "00:09:05",
+      "text": "For the four platform development, we require six to eight weeks."
+    },
+    {
+      "start": "00:09:05",
+      "end": "00:09:12",
+      "text": "For the AI agent training and integration, we require four weeks for testing and deployment."
+    },
+    {
+      "start": "00:09:12",
+      "end": "00:09:14",
+      "text": "Also, we require two weeks."
+    },
+    {
+      "start": "00:09:14",
+      "end": "00:09:21",
+      "text": "So approximately around we need 14 to 16 weeks for this MVP delivery."
+    },
+    {
+      "start": "00:09:21",
+      "end": "00:09:26",
+      "text": "So we understood what budget we are looking at."
+    },
+    {
+      "start": "00:09:26",
+      "end": "00:09:32",
+      "text": "So for an MVP, with three to four operational AI agents,"
+    },
+    {
+      "start": "00:09:32",
+      "end": "00:09:42",
+      "text": "dashboarding, integrations, and deployment support, the estimated budget could be around 60K to 85K dollars,"
+    },
+    {
+      "start": "00:09:42",
+      "end": "00:09:49",
+      "text": "depending on integrations, AI complexity, data readiness, and scale requirements."
+    },
+    {
+      "start": "00:09:50",
+      "end": "00:09:56",
+      "text": "One concern from our side is reliability."
+    },
+    {
+      "start": "00:09:56",
+      "end": "00:10:01",
+      "text": "You wouldn't want any incorrect operational decisions."
+    },
+    {
+      "start": "00:10:01",
+      "end": "00:10:05",
+      "text": "Absolutely, absolutely. I agree upon that."
+    },
+    {
+      "start": "00:10:05",
+      "end": "00:10:11",
+      "text": "That's why initially these AI agents would function more as intelligent assistants"
+    },
+    {
+      "start": "00:10:11",
+      "end": "00:10:15",
+      "text": "rather than fully autonomous decision makers."
+    },
+    {
+      "start": "00:10:15",
+      "end": "00:10:19",
+      "text": "What we can confidently promise is human in the loop approvals,"
+    },
+    {
+      "start": "00:10:19",
+      "end": "00:10:27",
+      "text": "explainable AI recommendations, secure architectures, scalable deployment, and measurable reduction in manual efforts."
+    },
+    {
+      "start": "00:10:30",
+      "end": "00:10:34",
+      "text": "So this was honestly a great discussion, Akshay."
+    },
+    {
+      "start": "00:10:34",
+      "end": "00:10:38",
+      "text": "I think there's a huge potential in this use case."
+    },
+    {
+      "start": "00:10:38",
+      "end": "00:10:45",
+      "text": "So accordingly, we will prepare the architecture proposal, AI agent workflow designs, implementation roadmap,"
+    },
+    {
+      "start": "00:10:45",
+      "end": "00:10:50",
+      "text": "and commercials, and share them with your team in next couple of days."
+    },
+    {
+      "start": "00:10:50",
+      "end": "00:10:54",
+      "text": "Looking forward to that."
+    },
+    {
+      "start": "00:10:54",
+      "end": "00:10:59",
+      "text": "Amazing, amazing. Thanks again, Akshay. I'm really excited about collaborating on this."
+    },
+    {
+      "start": "00:10:59",
+      "end": "00:11:02",
+      "text": "Thank you so much Dasha. Okay."
+    },
+    {
+      "start": "00:11:02",
+      "end": "00:11:05",
+      "text": "Bye."
+    },
+    {
+      "start": "00:11:08",
+      "end": "00:11:11",
+      "text": "Thank you."
+    }
+  ]
+}

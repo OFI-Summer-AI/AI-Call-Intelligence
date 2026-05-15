@@ -20,7 +20,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from app.agent.meeting_bot import MeetingBot
 from app.agent.calendar_watcher import MeetingEvent
 from app.logger import get_logger
-from app.orchestrator.pipeline import Pipeline
+from app.pipeline.pipeline import Pipeline
 
 logger = get_logger(__name__)
 
@@ -43,8 +43,8 @@ def _run_meeting_job(event: MeetingEvent) -> None:
     if not recording_path.exists() or recording_path.stat().st_size < 1024:
         logger.error(
             "Recording is empty or missing (%s) — skipping Pipeline 2. "
-            "Check that WASAPI loopback is enabled in Windows Sound settings "
-            "(right-click speaker icon → Sounds → Recording → enable Stereo Mix).",
+            "The meeting may have ended before any audio was captured, "
+            "or the bot was in the waiting room and never admitted.",
             recording_path.name,
         )
         return
