@@ -1,5 +1,6 @@
 [build]
-  builder = "NIXPACKS"
+  builder = "DOCKERFILE"
+  dockerfilePath = "AI_Call_Intelligence-dev/Dockerfile"
 
 [deploy]
   healthcheckPath = "/api/recordings"
