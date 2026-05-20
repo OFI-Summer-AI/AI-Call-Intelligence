@@ -32,6 +32,12 @@ app.add_middleware(
 
 app.include_router(api_router)
 
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 # Serve the standalone HTML UI
 STATIC_DIR = Path(__file__).parent / "static"
 if STATIC_DIR.exists():
