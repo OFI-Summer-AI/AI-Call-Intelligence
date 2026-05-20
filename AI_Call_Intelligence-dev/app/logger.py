@@ -21,7 +21,6 @@ def setup_logging(level: str = "INFO", log_dir: Path | None = None) -> None:
     root.setLevel(log_level)
 
     console = logging.StreamHandler(sys.stdout)
-    console.stream = open(sys.stdout.fileno(), mode="w", encoding="utf-8", buffering=1, closefd=False)
     console.setFormatter(formatter)
     root.addHandler(console)
 

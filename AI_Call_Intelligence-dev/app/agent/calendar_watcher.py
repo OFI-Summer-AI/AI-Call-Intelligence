@@ -56,8 +56,8 @@ class GoogleCalendarWatcher:
     SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
     def __init__(self):
-        self._creds_file = Path(os.getenv("GOOGLE_CREDENTIALS_FILE", "credentials.json"))
-        self._token_file = Path(os.getenv("GOOGLE_TOKEN_FILE", "google_token.json"))
+        self._creds_file = Path(os.getenv("GOOGLE_CREDENTIALS_FILE", "/tmp/credentials.json"))
+        self._token_file = Path(os.getenv("GOOGLE_TOKEN_FILE", "/tmp/google_token.json"))
         self._service = None
 
     def _build_service(self):

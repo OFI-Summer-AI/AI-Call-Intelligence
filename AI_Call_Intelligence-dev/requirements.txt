@@ -125,3 +125,7 @@ anthropic>=0.28
 fpdf2>=2.7
 sentence-transformers>=2.7
 playwright>=1.40
+google-auth>=2.0
+google-auth-oauthlib>=1.0
+google-api-python-client>=2.0
+msal>=1.20
