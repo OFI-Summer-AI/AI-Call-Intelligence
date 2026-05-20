@@ -17,4 +17,4 @@ RUN playwright install chromium --with-deps
 
 COPY AI_Call_Intelligence-dev/ .
 
-CMD ["sh", "-c", "uvicorn app.realtime_server:app --host 0.0.0.0 --port $PORT"]
+CMD ["uvicorn", "app.realtime_server:app", "--host", "0.0.0.0", "--port", "8080"]
