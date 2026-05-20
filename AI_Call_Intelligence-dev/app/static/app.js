@@ -285,7 +285,7 @@ const IcoPanelRight = p => /*#__PURE__*/React.createElement(Svg, p, /*#__PURE__*
 }));
 
 // ── Utilities ──────────────────────────────────────────────────────────────
-const API = 'http://localhost:8000';
+const API = typeof window.__API_BASE__ !== 'undefined' && window.__API_BASE__ ? window.__API_BASE__ : '';
 const prettify = id => {
   const n = id.replace(/_\d{4}-\d{2}-\d{2}T[\d-]+$/, '');
   return (n.replace(/_/g, ' ').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || id).trim();

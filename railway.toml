@@ -1,0 +1,7 @@
+[build]
+  rootDirectory = "AI_Call_Intelligence-dev"
+
+[deploy]
+  startCommand = "uvicorn app.realtime_server:app --host 0.0.0.0 --port $PORT"
+  healthcheckPath = "/api/recordings"
+  healthcheckTimeout = 30

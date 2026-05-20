@@ -1,5 +1,6 @@
 {
   "outputDirectory": "AI_Call_Intelligence-dev/app/static",
+  "buildCommand": "sed -i \"s|__RAILWAY_URL__|${RAILWAY_URL}|g\" AI_Call_Intelligence-dev/app/static/index.html",
   "rewrites": [
     { "source": "/static/(.*)", "destination": "/$1" },
     { "source": "/(.*)", "destination": "/index.html" }

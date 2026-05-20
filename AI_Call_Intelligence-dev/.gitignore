@@ -39,3 +39,7 @@ server_err.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Frontend build artifacts
+app/static/node_modules/
+app/static/package-lock.json

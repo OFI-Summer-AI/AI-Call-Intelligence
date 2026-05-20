@@ -34,7 +34,7 @@ const IcoPanelLeft=p=><Svg {...p}><rect x="3" y="3" width="18" height="18" rx="2
 const IcoPanelRight=p=><Svg {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></Svg>;
 
 // ── Utilities ──────────────────────────────────────────────────────────────
-const API='http://localhost:8000';
+const API=(typeof window.__API_BASE__!=='undefined'&&window.__API_BASE__)?window.__API_BASE__:'';
 const prettify=id=>{const n=id.replace(/_\d{4}-\d{2}-\d{2}T[\d-]+$/,'');return(n.replace(/_/g,' ').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())||id).trim();};
 const parseDate=id=>{const m=id.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})/);if(!m)return'';const[,y,mo,d,h,mi]=m;return new Date(+y,+mo-1,+d,+h,+mi).toLocaleString('en',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});};
 const getDuration=t=>{if(!t?.length)return'-';const p=(t[t.length-1].end||'00:00:00').split(':');try{const m=+p[0]*60+ +p[1];return m?`${m} min`:'<1 min';}catch{return'-';}};
