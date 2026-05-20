@@ -4,4 +4,4 @@
 
 [deploy]
   healthcheckPath = "/api/recordings"
-  healthcheckTimeout = 60
+  healthcheckTimeout = 300
