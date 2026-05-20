@@ -1,0 +1,7 @@
+{
+  "outputDirectory": "AI_Call_Intelligence-dev/app/static",
+  "rewrites": [
+    { "source": "/static/(.*)", "destination": "/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
