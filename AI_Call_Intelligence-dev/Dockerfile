@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y ffmpeg git && rm -rf /var/lib/apt/lists
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY AI_Call_Intelligence-dev/requirements.txt .
 
 # Install CPU-only torch first (avoids downloading 2GB CUDA build)
 RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu
@@ -15,6 +15,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install Playwright browser
 RUN playwright install chromium --with-deps
 
-COPY . .
+COPY AI_Call_Intelligence-dev/ .
 
-CMD uvicorn app.realtime_server:app --host 0.0.0.0 --port $PORT
+CMD ["sh", "-c", "uvicorn app.realtime_server:app --host 0.0.0.0 --port $PORT"]
