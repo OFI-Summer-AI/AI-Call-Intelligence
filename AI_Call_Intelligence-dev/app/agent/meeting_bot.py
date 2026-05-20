@@ -179,9 +179,7 @@ class MeetingBot:
     # Browser session
     # ------------------------------------------------------------------
 
-    _BOT_PROFILE_DIR = Path(os.getenv("BOT_PROFILE_DIR", "")) or (
-        Path.home() / ".ai_call_intel_bot_profile"
-    )
+    _BOT_PROFILE_DIR = Path(os.getenv("BOT_PROFILE_DIR", "/tmp/bot_profile"))
 
     def _run_browser_session(self, event: MeetingEvent, duration_secs: int,
                               output_path: Path) -> None:
@@ -217,7 +215,7 @@ class MeetingBot:
                 try:
                     kwargs = dict(
                         user_data_dir=profile_dir,
-                        headless=False,
+                        headless=os.getenv("BOT_HEADLESS", "true").lower() == "true",
                         args=_LAUNCH_ARGS,
                         permissions=["microphone", "camera"],
                     )

@@ -164,7 +164,7 @@ class OutlookCalendarWatcher:
     def __init__(self):
         self._client_id = os.getenv("MICROSOFT_CLIENT_ID", "")
         self._tenant_id = os.getenv("MICROSOFT_TENANT_ID", "common")
-        self._token_cache_file = Path(os.getenv("OUTLOOK_TOKEN_FILE", "outlook_token.json"))
+        self._token_cache_file = Path(os.getenv("OUTLOOK_TOKEN_FILE", "/tmp/outlook_token.json"))
         self._app = None
 
     def _build_app(self):

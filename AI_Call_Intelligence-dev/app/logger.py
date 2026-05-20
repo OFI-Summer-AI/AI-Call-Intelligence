@@ -5,8 +5,7 @@ from pathlib import Path
 
 def setup_logging(level: str = "INFO", log_dir: Path | None = None) -> None:
     """Configure root logger — call once at startup."""
-    from app.config import DATA_DIR
-    target_dir = log_dir or DATA_DIR / "logs"
+    target_dir = log_dir or Path("/tmp/app_data/logs")
     target_dir.mkdir(parents=True, exist_ok=True)
 
     log_level = getattr(logging, level.upper(), logging.INFO)
