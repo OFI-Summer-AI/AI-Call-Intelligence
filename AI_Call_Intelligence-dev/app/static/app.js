@@ -322,9 +322,9 @@ const countMinutes = recs => recs.reduce((s, r) => {
     return s;
   }
 }, 0);
-const confColor = v => v == null ? '#6b7280' : v >= 85 ? '#16a34a' : v >= 65 ? '#d97706' : '#dc2626';
-const scoreColor = v => v == null ? '#6b7280' : v >= 8 ? '#16a34a' : v >= 6 ? '#d97706' : '#dc2626';
-const riskColor = n => n === 0 ? '#16a34a' : n <= 3 ? '#d97706' : '#dc2626';
+const confColor = v => v == null ? '#6b7280' : v >= 85 ? '#c9a84c' : v >= 65 ? '#a07830' : '#1a1a1a';
+const scoreColor = v => v == null ? '#6b7280' : v >= 8 ? '#c9a84c' : v >= 6 ? '#a07830' : '#1a1a1a';
+const riskColor = n => n === 0 ? '#c9a84c' : n <= 3 ? '#a07830' : '#1a1a1a';
 
 // ── API helpers ────────────────────────────────────────────────────────────
 const apiFetch = (path, opts) => fetch(API + path, opts).then(r => r.json());
@@ -342,7 +342,7 @@ const StatCard = ({
   color = '#3b82f6',
   small = false
 }) => /*#__PURE__*/React.createElement("div", {
-  className: "bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center hover:border-gold-border hover:shadow-sm transition-all"
+  className: "bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center hover:border-gold-border transition-all card-hover stat-shimmer"
 }, /*#__PURE__*/React.createElement("div", {
   className: `font-extrabold leading-none ${small ? 'text-2xl' : 'text-3xl'}`,
   style: {
@@ -356,10 +356,10 @@ const Badge = ({
   type = 'neutral'
 }) => {
   const map = {
-    green: 'bg-green-50 text-green-700 border-green-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    red: 'bg-red-50 text-red-700 border-red-200',
-    blue: 'bg-blue-50 text-blue-700 border-blue-200',
+    green: 'bg-gold-light text-gold-dark border-gold-border',
+    amber: 'bg-gold-light text-gold-dark border-gold-border',
+    red: 'bg-gray-900 text-white border-gray-800',
+    blue: 'bg-gold-light text-gold-dark border-gold-border',
     neutral: 'bg-gray-100 text-gray-600 border-gray-200'
   };
   return /*#__PURE__*/React.createElement("span", {
@@ -410,24 +410,24 @@ const PillList = ({
 }) => /*#__PURE__*/React.createElement("div", {
   className: "rounded-xl border p-4",
   style: {
-    background: accent === 'green' ? '#f0fff4' : '#fff5f5',
-    borderColor: accent === 'green' ? '#bbf7d0' : '#fecaca'
+    background: '#fdf8ee',
+    borderColor: 'rgba(201,168,76,0.35)'
   }
 }, /*#__PURE__*/React.createElement("div", {
   className: "text-xs font-bold uppercase tracking-wider mb-3",
   style: {
-    color: accent === 'green' ? '#16a34a' : '#dc2626'
+    color: accent === 'green' ? '#c9a84c' : '#1a1a1a'
   }
 }, title), items.filter(Boolean).map((x, i) => /*#__PURE__*/React.createElement("div", {
   key: i,
   className: "flex gap-2 py-1.5 border-b last:border-0 text-sm",
   style: {
-    borderColor: accent === 'green' ? '#dcfce7' : '#fee2e2'
+    borderColor: 'rgba(201,168,76,0.2)'
   }
 }, /*#__PURE__*/React.createElement("span", {
   className: "font-bold mt-0.5",
   style: {
-    color: accent === 'green' ? '#16a34a' : '#dc2626'
+    color: accent === 'green' ? '#c9a84c' : '#1a1a1a'
   }
 }, "\u203A"), /*#__PURE__*/React.createElement("span", {
   className: "text-gray-800"
@@ -439,11 +439,11 @@ const NumberedList = ({
 }) => {
   const c = {
     gold: '#a07830',
-    green: '#16a34a'
+    green: '#c9a84c'
   };
   const bg = {
-    gold: '#fef9e7',
-    green: '#f0fff4'
+    gold: '#fdf8ee',
+    green: '#fdf8ee'
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "bg-gray-50 border border-gray-200 rounded-xl p-4"
@@ -561,7 +561,7 @@ const Sidebar = ({
   }), !collapsed && label))), collapsed ? /*#__PURE__*/React.createElement("div", {
     className: "py-4 flex flex-col items-center gap-2 border-t border-gray-200"
   }, /*#__PURE__*/React.createElement("span", {
-    className: `w-2 h-2 rounded-full ${serverOk ? 'bg-green-500' : 'bg-red-400'}`,
+    className: `w-2 h-2 rounded-full ${serverOk ? 'bg-gold' : 'bg-gray-900'}`,
     title: serverOk ? 'Server online' : 'Server offline'
   })) : /*#__PURE__*/React.createElement("div", {
     className: "px-4 py-4 border-t border-gray-200"
@@ -577,9 +577,9 @@ const Sidebar = ({
   })), /*#__PURE__*/React.createElement("div", {
     className: "text-xs text-gray-400"
   }, totalMin, " / 300 min"), /*#__PURE__*/React.createElement("div", {
-    className: `flex items-center gap-1.5 mt-3 text-xs ${serverOk ? 'text-green-600' : 'text-red-500'}`
+    className: `flex items-center gap-1.5 mt-3 text-xs ${serverOk ? 'text-gold-dark' : 'text-gray-900'}`
   }, /*#__PURE__*/React.createElement("span", {
-    className: `w-2 h-2 rounded-full ${serverOk ? 'bg-green-500' : 'bg-red-400'}`
+    className: `w-2 h-2 rounded-full ${serverOk ? 'bg-gold' : 'bg-gray-900'}`
   }), serverOk ? 'Server online' : 'Server offline')));
 };
 
@@ -598,7 +598,7 @@ const RecordingCard = ({
   const callS = f.call_score;
   const accentColor = riskColor(risks.length);
   return /*#__PURE__*/React.createElement("div", {
-    className: "bg-white border border-gray-200 rounded-2xl p-5 mb-3 hover:border-gold-border hover:shadow-md transition-all cursor-pointer fade-in group",
+    className: "bg-white border border-gray-200 rounded-2xl p-5 mb-3 hover:border-gold-border transition-all cursor-pointer fade-in group card-hover recording-card",
     style: {
       borderLeft: `4px solid ${accentColor}`
     },
@@ -717,15 +717,15 @@ const UploadSection = ({
     className: "text-sm text-gray-400"
   }, "Drop file here or click to browse")), file && status !== 'uploading' && status !== 'processing' && /*#__PURE__*/React.createElement("button", {
     onClick: process,
-    className: "w-full mt-3 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gold-dark to-gold hover:opacity-90 transition-all"
+    className: "w-full mt-3 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gold-dark to-gold hover:opacity-90 transition-all btn-gold-shine"
   }, "Process Recording"), (status === 'uploading' || status === 'processing') && /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mt-3 text-sm text-gold-dark"
   }, /*#__PURE__*/React.createElement(IcoSpin, {
     s: 15
   }), msg), status === 'done' && /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 text-xs text-green-600 font-medium"
+    className: "mt-3 text-xs text-gold-dark font-medium"
   }, msg), status === 'error' && /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 text-xs text-red-500"
+    className: "mt-3 text-xs text-gray-900 font-medium"
   }, msg));
 };
 
@@ -742,9 +742,9 @@ const AgentPanel = () => {
   const [joiningId, setJoiningId] = useState(null); // null | 'manual' | meeting index
   const [msg, setMsg] = useState('');
   const stColor = {
-    running: 'text-green-600',
-    starting: 'text-amber-500',
-    idle: 'text-blue-500',
+    running: 'text-gold-dark',
+    starting: 'text-gold',
+    idle: 'text-gray-600',
     stopped: 'text-gray-400'
   };
   const platLabel = {
@@ -753,9 +753,9 @@ const AgentPanel = () => {
     teams: 'Teams'
   };
   const platColor = {
-    meet: 'text-green-600',
-    zoom: 'text-blue-600',
-    teams: 'text-purple-600'
+    meet: 'text-gold-dark',
+    zoom: 'text-gray-700',
+    teams: 'text-gray-600'
   };
 
   // Poll agent status every 5s
@@ -831,11 +831,11 @@ const AgentPanel = () => {
     onClick: stopNow,
     className: "text-xs text-red-500 border border-red-200 rounded px-2 py-0.5 hover:bg-red-50 transition-all"
   }, "Stop")), isActive && /*#__PURE__*/React.createElement("div", {
-    className: "bg-green-50 border border-green-200 rounded-lg p-2.5 text-xs mb-3"
+    className: "bg-gold-light border border-gold-border rounded-lg p-2.5 text-xs mb-3"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "text-green-700 font-semibold"
+    className: "text-gold-dark font-semibold"
   }, "Bot is in a meeting"), agentSt.uptime_sec > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "text-green-600 mt-0.5"
+    className: "text-gold mt-0.5"
   }, Math.floor(agentSt.uptime_sec / 60), "m ", agentSt.uptime_sec % 60, "s uptime \xB7 ", agentSt.sessions_handled || 0, " session", agentSt.sessions_handled !== 1 ? 's' : '')), !isActive && /*#__PURE__*/React.createElement(React.Fragment, null, meetings.length > 0 ? /*#__PURE__*/React.createElement("div", {
     className: "mb-4"
   }, /*#__PURE__*/React.createElement("div", {
@@ -852,7 +852,7 @@ const AgentPanel = () => {
   }, fmt(m.start_time), " \xB7 ", m.platform)), m.join_url && /*#__PURE__*/React.createElement("button", {
     onClick: () => doJoin(m.join_url, m.platform, m.title, i),
     disabled: joiningId !== null,
-    className: "flex-shrink-0 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-gold-dark to-gold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-1"
+    className: "flex-shrink-0 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-gold-dark to-gold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-1 btn-gold-shine"
   }, joiningId === i ? /*#__PURE__*/React.createElement(IcoSpin, {
     s: 11
   }) : /*#__PURE__*/React.createElement(IcoLive, {
@@ -874,13 +874,13 @@ const AgentPanel = () => {
     placeholder: "https://meet.google.com/\u2026",
     className: "w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gold transition-all"
   })), platform && /*#__PURE__*/React.createElement("div", {
-    className: "mb-2 text-xs text-green-600 font-medium"
+    className: "mb-2 text-xs text-gold-dark font-medium"
   }, platLabel[platform], " detected"), url && !platform && /*#__PURE__*/React.createElement("div", {
-    className: "mb-2 text-xs text-red-400"
+    className: "mb-2 text-xs text-gray-900 font-medium"
   }, "Unrecognised URL"), platform && /*#__PURE__*/React.createElement("button", {
     onClick: () => doJoin(url, platform, 'Manual Join', 'manual'),
     disabled: joiningId !== null,
-    className: "w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gold-dark to-gold hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+    className: "w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gold-dark to-gold hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 btn-gold-shine"
   }, joiningId === 'manual' ? /*#__PURE__*/React.createElement(IcoSpin, {
     s: 14
   }) : /*#__PURE__*/React.createElement(IcoLive, {
@@ -907,9 +907,9 @@ const UpcomingMeetings = () => {
     }
   };
   const platColors = {
-    meet: 'bg-green-50 text-green-700',
-    zoom: 'bg-blue-50 text-blue-700',
-    teams: 'bg-purple-50 text-purple-700'
+    meet: 'bg-gold-light text-gold-dark',
+    zoom: 'bg-gray-100 text-gray-700',
+    teams: 'bg-gray-100 text-gray-600'
   };
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "text-xs font-bold uppercase tracking-widest text-gold-dark mb-3"
@@ -936,7 +936,7 @@ const QuickAction = ({
   color = '#c9a84c'
 }) => /*#__PURE__*/React.createElement("button", {
   onClick: onClick,
-  className: "flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-2xl hover:border-gold-border hover:shadow-sm transition-all text-left w-full"
+  className: "flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-2xl hover:border-gold-border transition-all text-left w-full card-hover"
 }, /*#__PURE__*/React.createElement("div", {
   className: "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
   style: {
@@ -990,32 +990,32 @@ const HomeDashboard = ({
   }))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-4 gap-3 mb-8"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-4 text-center"
+    className: "bg-gradient-to-br from-gold-light to-white border border-gold-border rounded-2xl p-4 text-center card-hover stat-shimmer"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "text-3xl font-extrabold text-blue-600 leading-none"
+    className: "text-3xl font-extrabold text-gold-dark leading-none"
   }, recordings.length), /*#__PURE__*/React.createElement("div", {
-    className: "text-xs font-bold uppercase tracking-widest text-blue-400 mt-2"
+    className: "text-xs font-bold uppercase tracking-widest text-gold mt-2"
   }, "Total Calls")), /*#__PURE__*/React.createElement("div", {
-    className: "bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-4 text-center"
+    className: "bg-gradient-to-br from-gold-light to-white border border-gold-border rounded-2xl p-4 text-center card-hover stat-shimmer"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "text-3xl font-extrabold text-purple-600 leading-none"
+    className: "text-3xl font-extrabold text-gray-900 leading-none"
   }, countMinutes(recordings)), /*#__PURE__*/React.createElement("div", {
-    className: "text-xs font-bold uppercase tracking-widest text-purple-400 mt-2"
+    className: "text-xs font-bold uppercase tracking-widest text-gold mt-2"
   }, "Minutes")), /*#__PURE__*/React.createElement("div", {
-    className: "bg-gradient-to-br from-amber-50 to-yellow-100 border border-amber-200 rounded-2xl p-4 text-center"
+    className: "bg-gradient-to-br from-gold-light to-white border border-gold-border rounded-2xl p-4 text-center card-hover stat-shimmer"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-3xl font-extrabold leading-none",
     style: {
       color: '#a07830'
     }
   }, avgConf != null ? `${avgConf}%` : '—'), /*#__PURE__*/React.createElement("div", {
-    className: "text-xs font-bold uppercase tracking-widest text-amber-500 mt-2"
+    className: "text-xs font-bold uppercase tracking-widest text-gold-dark mt-2"
   }, "Avg SOP")), /*#__PURE__*/React.createElement("div", {
-    className: `bg-gradient-to-br rounded-2xl p-4 text-center border ${needsReview ? 'from-red-50 to-red-100 border-red-200' : 'from-green-50 to-green-100 border-green-200'}`
+    className: "bg-gradient-to-br from-gold-light to-white border border-gold-border rounded-2xl p-4 text-center card-hover stat-shimmer"
   }, /*#__PURE__*/React.createElement("div", {
-    className: `text-3xl font-extrabold leading-none ${needsReview ? 'text-red-500' : 'text-green-600'}`
+    className: "text-3xl font-extrabold leading-none text-gray-900"
   }, needsReview), /*#__PURE__*/React.createElement("div", {
-    className: `text-xs font-bold uppercase tracking-widest mt-2 ${needsReview ? 'text-red-400' : 'text-green-500'}`
+    className: "text-xs font-bold uppercase tracking-widest mt-2 text-gold"
   }, "Needs Review"))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-[1fr_280px] gap-6"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -1052,7 +1052,7 @@ const HomeDashboard = ({
     label: "Upload Recording",
     desc: "Process a call with AI",
     onClick: () => setPage('recordings'),
-    color: "#3b82f6"
+    color: "#c9a84c"
   }), /*#__PURE__*/React.createElement(QuickAction, {
     icon: /*#__PURE__*/React.createElement(IcoLive, {
       s: 18
@@ -1060,7 +1060,7 @@ const HomeDashboard = ({
     label: "Live Transcription",
     desc: "Transcribe mic or screen",
     onClick: () => setPage('live'),
-    color: "#10b981"
+    color: "#c9a84c"
   }), /*#__PURE__*/React.createElement(QuickAction, {
     icon: /*#__PURE__*/React.createElement(IcoCal, {
       s: 18
@@ -1068,7 +1068,7 @@ const HomeDashboard = ({
     label: "Calendar",
     desc: "Connect & auto-join meetings",
     onClick: () => setPage('calendar'),
-    color: "#8b5cf6"
+    color: "#a07830"
   }), /*#__PURE__*/React.createElement(QuickAction, {
     icon: /*#__PURE__*/React.createElement(IcoReq, {
       s: 18
@@ -1078,7 +1078,7 @@ const HomeDashboard = ({
     onClick: () => setPage('requirements'),
     color: "#c9a84c"
   }), needsReview > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mt-2 bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600 font-medium"
+    className: "mt-2 bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white font-medium"
   }, needsReview, " recording", needsReview > 1 ? 's' : '', " flagged for review"))));
 };
 
@@ -1114,17 +1114,17 @@ const RecordingsPage = ({
   }, /*#__PURE__*/React.createElement(StatCard, {
     num: recordings.length,
     label: "Total",
-    color: "#3b82f6",
+    color: "#c9a84c",
     small: true
   }), /*#__PURE__*/React.createElement(StatCard, {
     num: countMinutes(recordings),
     label: "Minutes",
-    color: "#6366f1",
+    color: "#a07830",
     small: true
   }), /*#__PURE__*/React.createElement(StatCard, {
     num: needsReview,
     label: "Needs Review",
-    color: needsReview ? '#ef4444' : '#22c55e',
+    color: needsReview ? '#1a1a1a' : '#c9a84c',
     small: true
   })), filtered.length === 0 ? /*#__PURE__*/React.createElement("div", {
     className: "border border-gray-200 rounded-2xl p-16 text-center"
@@ -1177,7 +1177,7 @@ const TopBar = ({
     href: `${API}/api/recordings/${id}/pdf`,
     target: "_blank",
     rel: "noreferrer",
-    className: "flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-gold-dark to-gold rounded-lg hover:opacity-90 transition-all"
+    className: "flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-gold-dark to-gold rounded-lg hover:opacity-90 transition-all btn-gold-shine"
   }, /*#__PURE__*/React.createElement(IcoDl, {
     s: 13
   }), " Download PDF"));
@@ -1244,19 +1244,19 @@ const TabOverview = ({
 }, /*#__PURE__*/React.createElement(FieldCard, {
   label: "Client / Account",
   value: f.client_name,
-  color: "#3b82f6"
+  color: "#c9a84c"
 }), /*#__PURE__*/React.createElement(FieldCard, {
   label: "Client Problem",
   value: f.client_problem,
-  color: "#0ea5e9"
+  color: "#a07830"
 }), /*#__PURE__*/React.createElement(FieldCard, {
   label: "Timeline",
   value: f.timeline,
-  color: "#8b5cf6"
+  color: "#1a1a1a"
 }), /*#__PURE__*/React.createElement(FieldCard, {
   label: "Budget",
   value: f.budget,
-  color: "#22c55e"
+  color: "#c9a84c"
 })), f.call_summary && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SectionLabel, {
   mt: true
 }, "Call Summary"), /*#__PURE__*/React.createElement("div", {
@@ -1526,12 +1526,12 @@ const TabRisks = ({
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex-1"
   }, risks.length === 0 ? /*#__PURE__*/React.createElement("div", {
-    className: "bg-green-50 border border-green-200 rounded-xl p-5 text-green-700 font-medium text-sm"
+    className: "bg-gold-light border border-gold-border rounded-xl p-5 text-gold-dark font-medium text-sm"
   }, "No risks identified in this recording.") : risks.map((r, i) => {
     const desc = typeof r === 'string' ? r : r.description || r.text || String(r);
     return /*#__PURE__*/React.createElement("div", {
       key: i,
-      className: "bg-amber-50 border border-amber-200 rounded-xl p-4 mb-3 text-sm text-gray-800 leading-relaxed",
+      className: "bg-gold-light border border-gold-border rounded-xl p-4 mb-3 text-sm text-gray-900 leading-relaxed",
       style: {
         borderLeft: '3px solid #c9a84c'
       }
@@ -1539,15 +1539,15 @@ const TabRisks = ({
   })), /*#__PURE__*/React.createElement("div", {
     className: "w-36 flex-shrink-0"
   }, /*#__PURE__*/React.createElement("div", {
-    className: `rounded-xl p-4 text-center border ${needsReview ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`
+    className: `rounded-xl p-4 text-center border ${needsReview ? 'bg-gray-900 border-gray-700' : 'bg-gold-light border-gold-border'}`
   }, needsReview ? /*#__PURE__*/React.createElement(IcoAlert, {
     s: 22,
-    c: "mx-auto mb-2 text-red-500"
+    c: "mx-auto mb-2 text-white"
   }) : /*#__PURE__*/React.createElement(IcoShield, {
     s: 22,
-    c: "mx-auto mb-2 text-green-500"
+    c: "mx-auto mb-2 text-gold-dark"
   }), /*#__PURE__*/React.createElement("div", {
-    className: `text-xs font-bold uppercase tracking-wider ${needsReview ? 'text-red-600' : 'text-green-600'}`
+    className: `text-xs font-bold uppercase tracking-wider ${needsReview ? 'text-white' : 'text-gold-dark'}`
   }, needsReview ? 'Needs Review' : 'All Clear')))), tech && (Array.isArray(tech) ? tech : [tech]).filter(Boolean).length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(SectionLabel, {
     mt: true
   }, "Tech Stack"), /*#__PURE__*/React.createElement("div", {

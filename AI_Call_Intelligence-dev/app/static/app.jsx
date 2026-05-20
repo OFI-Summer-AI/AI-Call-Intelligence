@@ -39,9 +39,9 @@ const prettify=id=>{const n=id.replace(/_\d{4}-\d{2}-\d{2}T[\d-]+$/,'');return(n
 const parseDate=id=>{const m=id.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})/);if(!m)return'';const[,y,mo,d,h,mi]=m;return new Date(+y,+mo-1,+d,+h,+mi).toLocaleString('en',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});};
 const getDuration=t=>{if(!t?.length)return'-';const p=(t[t.length-1].end||'00:00:00').split(':');try{const m=+p[0]*60+ +p[1];return m?`${m} min`:'<1 min';}catch{return'-';}};
 const countMinutes=recs=>recs.reduce((s,r)=>{const t=r.transcript||[];if(!t.length)return s;const p=(t[t.length-1].end||'0:0').split(':');try{return s+ +p[0]*60+ +p[1];}catch{return s;}},0);
-const confColor=v=>v==null?'#6b7280':v>=85?'#16a34a':v>=65?'#d97706':'#dc2626';
-const scoreColor=v=>v==null?'#6b7280':v>=8?'#16a34a':v>=6?'#d97706':'#dc2626';
-const riskColor=n=>n===0?'#16a34a':n<=3?'#d97706':'#dc2626';
+const confColor=v=>v==null?'#6b7280':v>=85?'#c9a84c':v>=65?'#a07830':'#1a1a1a';
+const scoreColor=v=>v==null?'#6b7280':v>=8?'#c9a84c':v>=6?'#a07830':'#1a1a1a';
+const riskColor=n=>n===0?'#c9a84c':n<=3?'#a07830':'#1a1a1a';
 
 // ── API helpers ────────────────────────────────────────────────────────────
 const apiFetch=(path,opts)=>fetch(API+path,opts).then(r=>r.json());
@@ -52,14 +52,14 @@ const SectionLabel=({children,mt=false})=>(
 );
 
 const StatCard=({num,label,color='#3b82f6',small=false})=>(
-  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center hover:border-gold-border hover:shadow-sm transition-all">
+  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-center hover:border-gold-border transition-all card-hover stat-shimmer">
     <div className={`font-extrabold leading-none ${small?'text-2xl':'text-3xl'}`} style={{color}}>{num}</div>
     <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mt-2">{label}</div>
   </div>
 );
 
 const Badge=({label,type='neutral'})=>{
-  const map={green:'bg-green-50 text-green-700 border-green-200',amber:'bg-amber-50 text-amber-700 border-amber-200',red:'bg-red-50 text-red-700 border-red-200',blue:'bg-blue-50 text-blue-700 border-blue-200',neutral:'bg-gray-100 text-gray-600 border-gray-200'};
+  const map={green:'bg-gold-light text-gold-dark border-gold-border',amber:'bg-gold-light text-gold-dark border-gold-border',red:'bg-gray-900 text-white border-gray-800',blue:'bg-gold-light text-gold-dark border-gold-border',neutral:'bg-gray-100 text-gray-600 border-gray-200'};
   return <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold border ${map[type]||map.neutral}`}>{label}</span>;
 };
 
@@ -78,11 +78,11 @@ const Chip=({label,color='gold'})=>{
 };
 
 const PillList=({title,items,accent})=>(
-  <div className="rounded-xl border p-4" style={{background:accent==='green'?'#f0fff4':'#fff5f5',borderColor:accent==='green'?'#bbf7d0':'#fecaca'}}>
-    <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{color:accent==='green'?'#16a34a':'#dc2626'}}>{title}</div>
+  <div className="rounded-xl border p-4" style={{background:'#fdf8ee',borderColor:'rgba(201,168,76,0.35)'}}>
+    <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{color:accent==='green'?'#c9a84c':'#1a1a1a'}}>{title}</div>
     {items.filter(Boolean).map((x,i)=>(
-      <div key={i} className="flex gap-2 py-1.5 border-b last:border-0 text-sm" style={{borderColor:accent==='green'?'#dcfce7':'#fee2e2'}}>
-        <span className="font-bold mt-0.5" style={{color:accent==='green'?'#16a34a':'#dc2626'}}>›</span>
+      <div key={i} className="flex gap-2 py-1.5 border-b last:border-0 text-sm" style={{borderColor:'rgba(201,168,76,0.2)'}}>
+        <span className="font-bold mt-0.5" style={{color:accent==='green'?'#c9a84c':'#1a1a1a'}}>›</span>
         <span className="text-gray-800">{x}</span>
       </div>
     ))}
@@ -90,7 +90,7 @@ const PillList=({title,items,accent})=>(
 );
 
 const NumberedList=({title,items,accent='gold'})=>{
-  const c={gold:'#a07830',green:'#16a34a'};const bg={gold:'#fef9e7',green:'#f0fff4'};
+  const c={gold:'#a07830',green:'#c9a84c'};const bg={gold:'#fdf8ee',green:'#fdf8ee'};
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
       <div className="text-xs font-bold uppercase tracking-wider mb-3" style={{color:c[accent]}}>{title}</div>
@@ -165,7 +165,7 @@ const Sidebar=({page,setPage,recordings,serverOk,collapsed,onToggle})=>{
       {/* Footer */}
       {collapsed?(
         <div className="py-4 flex flex-col items-center gap-2 border-t border-gray-200">
-          <span className={`w-2 h-2 rounded-full ${serverOk?'bg-green-500':'bg-red-400'}`} title={serverOk?'Server online':'Server offline'}/>
+          <span className={`w-2 h-2 rounded-full ${serverOk?'bg-gold':'bg-gray-900'}`} title={serverOk?'Server online':'Server offline'}/>
         </div>
       ):(
         <div className="px-4 py-4 border-t border-gray-200">
@@ -174,8 +174,8 @@ const Sidebar=({page,setPage,recordings,serverOk,collapsed,onToggle})=>{
             <div className="h-full bg-gold rounded-full transition-all" style={{width:`${usedPct}%`}}/>
           </div>
           <div className="text-xs text-gray-400">{totalMin} / 300 min</div>
-          <div className={`flex items-center gap-1.5 mt-3 text-xs ${serverOk?'text-green-600':'text-red-500'}`}>
-            <span className={`w-2 h-2 rounded-full ${serverOk?'bg-green-500':'bg-red-400'}`}/>
+          <div className={`flex items-center gap-1.5 mt-3 text-xs ${serverOk?'text-gold-dark':'text-gray-900'}`}>
+            <span className={`w-2 h-2 rounded-full ${serverOk?'bg-gold':'bg-gray-900'}`}/>
             {serverOk?'Server online':'Server offline'}
           </div>
         </div>
@@ -196,7 +196,7 @@ const RecordingCard=({rec,onOpen})=>{
   const callS=f.call_score;
   const accentColor=riskColor(risks.length);
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-3 hover:border-gold-border hover:shadow-md transition-all cursor-pointer fade-in group"
+    <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-3 hover:border-gold-border transition-all cursor-pointer fade-in group card-hover recording-card"
          style={{borderLeft:`4px solid ${accentColor}`}} onClick={()=>onOpen(id)}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -260,15 +260,15 @@ const UploadSection=({onProcessed})=>{
              :<div className="text-sm text-gray-400">Drop file here or click to browse</div>}
       </div>
       {file&&status!=='uploading'&&status!=='processing'&&(
-        <button onClick={process} className="w-full mt-3 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gold-dark to-gold hover:opacity-90 transition-all">
+        <button onClick={process} className="w-full mt-3 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gold-dark to-gold hover:opacity-90 transition-all btn-gold-shine">
           Process Recording
         </button>
       )}
       {(status==='uploading'||status==='processing')&&(
         <div className="flex items-center gap-2 mt-3 text-sm text-gold-dark"><IcoSpin s={15}/>{msg}</div>
       )}
-      {status==='done'&&<div className="mt-3 text-xs text-green-600 font-medium">{msg}</div>}
-      {status==='error'&&<div className="mt-3 text-xs text-red-500">{msg}</div>}
+      {status==='done'&&<div className="mt-3 text-xs text-gold-dark font-medium">{msg}</div>}
+      {status==='error'&&<div className="mt-3 text-xs text-gray-900 font-medium">{msg}</div>}
     </div>
   );
 };
@@ -281,9 +281,9 @@ const AgentPanel=()=>{
   const [agentSt,setAgentSt]=useState({status:'stopped',uptime_sec:0,sessions_handled:0});
   const [joiningId,setJoiningId]=useState(null); // null | 'manual' | meeting index
   const [msg,setMsg]=useState('');
-  const stColor={running:'text-green-600',starting:'text-amber-500',idle:'text-blue-500',stopped:'text-gray-400'};
+  const stColor={running:'text-gold-dark',starting:'text-gold',idle:'text-gray-600',stopped:'text-gray-400'};
   const platLabel={meet:'Google Meet',zoom:'Zoom',teams:'Teams'};
-  const platColor={meet:'text-green-600',zoom:'text-blue-600',teams:'text-purple-600'};
+  const platColor={meet:'text-gold-dark',zoom:'text-gray-700',teams:'text-gray-600'};
 
   // Poll agent status every 5s
   useEffect(()=>{
@@ -339,9 +339,9 @@ const AgentPanel=()=>{
 
       {/* Active status card */}
       {isActive&&(
-        <div className="bg-green-50 border border-green-200 rounded-lg p-2.5 text-xs mb-3">
-          <div className="text-green-700 font-semibold">Bot is in a meeting</div>
-          {agentSt.uptime_sec>0&&<div className="text-green-600 mt-0.5">{Math.floor(agentSt.uptime_sec/60)}m {agentSt.uptime_sec%60}s uptime · {agentSt.sessions_handled||0} session{agentSt.sessions_handled!==1?'s':''}</div>}
+        <div className="bg-gold-light border border-gold-border rounded-lg p-2.5 text-xs mb-3">
+          <div className="text-gold-dark font-semibold">Bot is in a meeting</div>
+          {agentSt.uptime_sec>0&&<div className="text-gold mt-0.5">{Math.floor(agentSt.uptime_sec/60)}m {agentSt.uptime_sec%60}s uptime · {agentSt.sessions_handled||0} session{agentSt.sessions_handled!==1?'s':''}</div>}
         </div>
       )}
 
@@ -360,7 +360,7 @@ const AgentPanel=()=>{
                   {m.join_url&&(
                     <button onClick={()=>doJoin(m.join_url,m.platform,m.title,i)}
                             disabled={joiningId!==null}
-                            className="flex-shrink-0 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-gold-dark to-gold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-1">
+                            className="flex-shrink-0 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-gold-dark to-gold rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-1 btn-gold-shine">
                       {joiningId===i?<IcoSpin s={11}/>:<IcoLive s={11}/>}
                       {joiningId===i?'…':'Join'}
                     </button>
@@ -382,11 +382,11 @@ const AgentPanel=()=>{
             <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://meet.google.com/…"
                    className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gold transition-all"/>
           </div>
-          {platform&&<div className="mb-2 text-xs text-green-600 font-medium">{platLabel[platform]} detected</div>}
-          {url&&!platform&&<div className="mb-2 text-xs text-red-400">Unrecognised URL</div>}
+          {platform&&<div className="mb-2 text-xs text-gold-dark font-medium">{platLabel[platform]} detected</div>}
+          {url&&!platform&&<div className="mb-2 text-xs text-gray-900 font-medium">Unrecognised URL</div>}
           {platform&&(
             <button onClick={()=>doJoin(url,platform,'Manual Join','manual')} disabled={joiningId!==null}
-                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gold-dark to-gold hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-gold-dark to-gold hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2 btn-gold-shine">
               {joiningId==='manual'?<IcoSpin s={14}/>:<IcoLive s={14}/>}
               {joiningId==='manual'?'Starting…':'Join & Record'}
             </button>
@@ -404,7 +404,7 @@ const UpcomingMeetings=()=>{
   const [meetings,setMeetings]=useState([]);
   useEffect(()=>{apiFetch('/api/upcoming-meetings').then(setMeetings).catch(()=>{});},[]);
   const fmt=t=>{try{return new Date(t).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});}catch{return t;}};
-  const platColors={meet:'bg-green-50 text-green-700',zoom:'bg-blue-50 text-blue-700',teams:'bg-purple-50 text-purple-700'};
+  const platColors={meet:'bg-gold-light text-gold-dark',zoom:'bg-gray-100 text-gray-700',teams:'bg-gray-100 text-gray-600'};
   return (
     <div>
       <div className="text-xs font-bold uppercase tracking-widest text-gold-dark mb-3">Upcoming Meetings</div>
@@ -426,7 +426,7 @@ const UpcomingMeetings=()=>{
 
 // ── Home Dashboard ─────────────────────────────────────────────────────────
 const QuickAction=({icon,label,desc,onClick,color='#c9a84c'})=>(
-  <button onClick={onClick} className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-2xl hover:border-gold-border hover:shadow-sm transition-all text-left w-full">
+  <button onClick={onClick} className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-2xl hover:border-gold-border transition-all text-left w-full card-hover">
     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:`${color}18`,color}}>
       {icon}
     </div>
@@ -462,21 +462,21 @@ const HomeDashboard=({recordings,onOpen,onProcessed,setPage,serverOk})=>{
 
       {/* Stat cards */}
       <div className="grid grid-cols-4 gap-3 mb-8">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-4 text-center">
-          <div className="text-3xl font-extrabold text-blue-600 leading-none">{recordings.length}</div>
-          <div className="text-xs font-bold uppercase tracking-widest text-blue-400 mt-2">Total Calls</div>
+        <div className="bg-gradient-to-br from-gold-light to-white border border-gold-border rounded-2xl p-4 text-center card-hover stat-shimmer">
+          <div className="text-3xl font-extrabold text-gold-dark leading-none">{recordings.length}</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-gold mt-2">Total Calls</div>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-4 text-center">
-          <div className="text-3xl font-extrabold text-purple-600 leading-none">{countMinutes(recordings)}</div>
-          <div className="text-xs font-bold uppercase tracking-widest text-purple-400 mt-2">Minutes</div>
+        <div className="bg-gradient-to-br from-gold-light to-white border border-gold-border rounded-2xl p-4 text-center card-hover stat-shimmer">
+          <div className="text-3xl font-extrabold text-gray-900 leading-none">{countMinutes(recordings)}</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-gold mt-2">Minutes</div>
         </div>
-        <div className="bg-gradient-to-br from-amber-50 to-yellow-100 border border-amber-200 rounded-2xl p-4 text-center">
+        <div className="bg-gradient-to-br from-gold-light to-white border border-gold-border rounded-2xl p-4 text-center card-hover stat-shimmer">
           <div className="text-3xl font-extrabold leading-none" style={{color:'#a07830'}}>{avgConf!=null?`${avgConf}%`:'—'}</div>
-          <div className="text-xs font-bold uppercase tracking-widest text-amber-500 mt-2">Avg SOP</div>
+          <div className="text-xs font-bold uppercase tracking-widest text-gold-dark mt-2">Avg SOP</div>
         </div>
-        <div className={`bg-gradient-to-br rounded-2xl p-4 text-center border ${needsReview?'from-red-50 to-red-100 border-red-200':'from-green-50 to-green-100 border-green-200'}`}>
-          <div className={`text-3xl font-extrabold leading-none ${needsReview?'text-red-500':'text-green-600'}`}>{needsReview}</div>
-          <div className={`text-xs font-bold uppercase tracking-widest mt-2 ${needsReview?'text-red-400':'text-green-500'}`}>Needs Review</div>
+        <div className="bg-gradient-to-br from-gold-light to-white border border-gold-border rounded-2xl p-4 text-center card-hover stat-shimmer">
+          <div className="text-3xl font-extrabold leading-none text-gray-900">{needsReview}</div>
+          <div className="text-xs font-bold uppercase tracking-widest mt-2 text-gold">Needs Review</div>
         </div>
       </div>
 
@@ -510,12 +510,12 @@ const HomeDashboard=({recordings,onOpen,onProcessed,setPage,serverOk})=>{
         {/* Right: quick actions */}
         <div className="space-y-3">
           <div className="text-xs font-bold uppercase tracking-widest text-gold-dark mb-4">Quick Actions</div>
-          <QuickAction icon={<IcoUpload s={18}/>} label="Upload Recording" desc="Process a call with AI" onClick={()=>setPage('recordings')} color="#3b82f6"/>
-          <QuickAction icon={<IcoLive s={18}/>} label="Live Transcription" desc="Transcribe mic or screen" onClick={()=>setPage('live')} color="#10b981"/>
-          <QuickAction icon={<IcoCal s={18}/>} label="Calendar" desc="Connect & auto-join meetings" onClick={()=>setPage('calendar')} color="#8b5cf6"/>
+          <QuickAction icon={<IcoUpload s={18}/>} label="Upload Recording" desc="Process a call with AI" onClick={()=>setPage('recordings')} color="#c9a84c"/>
+          <QuickAction icon={<IcoLive s={18}/>} label="Live Transcription" desc="Transcribe mic or screen" onClick={()=>setPage('live')} color="#c9a84c"/>
+          <QuickAction icon={<IcoCal s={18}/>} label="Calendar" desc="Connect & auto-join meetings" onClick={()=>setPage('calendar')} color="#a07830"/>
           <QuickAction icon={<IcoReq s={18}/>} label="Requirements" desc="View extracted requirements" onClick={()=>setPage('requirements')} color="#c9a84c"/>
           {needsReview>0&&(
-            <div className="mt-2 bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-600 font-medium">
+            <div className="mt-2 bg-gray-900 border border-gray-700 rounded-xl p-3 text-xs text-white font-medium">
               {needsReview} recording{needsReview>1?'s':''} flagged for review
             </div>
           )}
@@ -544,9 +544,9 @@ const RecordingsPage=({recordings,onOpen,onProcessed})=>{
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3 mb-6">
-        <StatCard num={recordings.length} label="Total" color="#3b82f6" small/>
-        <StatCard num={countMinutes(recordings)} label="Minutes" color="#6366f1" small/>
-        <StatCard num={needsReview} label="Needs Review" color={needsReview?'#ef4444':'#22c55e'} small/>
+        <StatCard num={recordings.length} label="Total" color="#c9a84c" small/>
+        <StatCard num={countMinutes(recordings)} label="Minutes" color="#a07830" small/>
+        <StatCard num={needsReview} label="Needs Review" color={needsReview?'#1a1a1a':'#c9a84c'} small/>
       </div>
       {filtered.length===0
         ?<div className="border border-gray-200 rounded-2xl p-16 text-center">
@@ -580,7 +580,7 @@ const TopBar=({rec,onBack,onReanalyze,reanalyzing})=>{
         {reanalyzing?<IcoSpin s={13}/>:<IcoRefresh s={13}/>} Re-analyze
       </button>
       <a href={`${API}/api/recordings/${id}/pdf`} target="_blank" rel="noreferrer"
-         className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-gold-dark to-gold rounded-lg hover:opacity-90 transition-all">
+         className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-gold-dark to-gold rounded-lg hover:opacity-90 transition-all btn-gold-shine">
         <IcoDl s={13}/> Download PDF
       </a>
     </div>
@@ -612,10 +612,10 @@ const TabOverview=({f})=>(
   <div className="fade-in">
     <SectionLabel>Meeting Information</SectionLabel>
     <div className="grid grid-cols-2 gap-3 mb-2">
-      <FieldCard label="Client / Account" value={f.client_name} color="#3b82f6"/>
-      <FieldCard label="Client Problem"   value={f.client_problem} color="#0ea5e9"/>
-      <FieldCard label="Timeline"         value={f.timeline} color="#8b5cf6"/>
-      <FieldCard label="Budget"           value={f.budget} color="#22c55e"/>
+      <FieldCard label="Client / Account" value={f.client_name} color="#c9a84c"/>
+      <FieldCard label="Client Problem"   value={f.client_problem} color="#a07830"/>
+      <FieldCard label="Timeline"         value={f.timeline} color="#1a1a1a"/>
+      <FieldCard label="Budget"           value={f.budget} color="#c9a84c"/>
     </div>
     {f.call_summary&&(
       <>
@@ -816,16 +816,16 @@ const TabRisks=({f,risk})=>{
       <div className="flex gap-6">
         <div className="flex-1">
           {risks.length===0
-            ?<div className="bg-green-50 border border-green-200 rounded-xl p-5 text-green-700 font-medium text-sm">No risks identified in this recording.</div>
+            ?<div className="bg-gold-light border border-gold-border rounded-xl p-5 text-gold-dark font-medium text-sm">No risks identified in this recording.</div>
             :risks.map((r,i)=>{const desc=typeof r==='string'?r:(r.description||r.text||String(r));return(
-              <div key={i} className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-3 text-sm text-gray-800 leading-relaxed" style={{borderLeft:'3px solid #c9a84c'}}>{desc}</div>
+              <div key={i} className="bg-gold-light border border-gold-border rounded-xl p-4 mb-3 text-sm text-gray-900 leading-relaxed" style={{borderLeft:'3px solid #c9a84c'}}>{desc}</div>
             );})
           }
         </div>
         <div className="w-36 flex-shrink-0">
-          <div className={`rounded-xl p-4 text-center border ${needsReview?'bg-red-50 border-red-200':'bg-green-50 border-green-200'}`}>
-            {needsReview?<IcoAlert s={22} c="mx-auto mb-2 text-red-500"/>:<IcoShield s={22} c="mx-auto mb-2 text-green-500"/>}
-            <div className={`text-xs font-bold uppercase tracking-wider ${needsReview?'text-red-600':'text-green-600'}`}>{needsReview?'Needs Review':'All Clear'}</div>
+          <div className={`rounded-xl p-4 text-center border ${needsReview?'bg-gray-900 border-gray-700':'bg-gold-light border-gold-border'}`}>
+            {needsReview?<IcoAlert s={22} c="mx-auto mb-2 text-white"/>:<IcoShield s={22} c="mx-auto mb-2 text-gold-dark"/>}
+            <div className={`text-xs font-bold uppercase tracking-wider ${needsReview?'text-white':'text-gold-dark'}`}>{needsReview?'Needs Review':'All Clear'}</div>
           </div>
         </div>
       </div>
