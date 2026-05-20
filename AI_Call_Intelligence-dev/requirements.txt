@@ -100,10 +100,10 @@ sympy==1.14.0
 threadpoolctl==3.6.0
 # tiktoken==0.12.0             # UNUSED: token counter, not imported
 tomli==2.4.1
-torch==2.11.0
+# torch==2.11.0  # installed as CPU-only in Dockerfile before this step
 # torch-audiomentations==0.12.0  # UNUSED: audio augmentation, not imported
 # torch_pitch_shift==1.2.5       # UNUSED: pitch shifting, not imported
-torchaudio==2.11.0
+# torchaudio==2.11.0  # installed as CPU-only in Dockerfile before this step
 # torchcodec==0.11.1           # UNUSED: video codec, not imported
 # torchmetrics==1.9.0          # UNUSED: PyTorch metrics, not imported
 tqdm==4.67.3
