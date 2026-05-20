@@ -1,5 +1,4 @@
 [build]
-  rootDirectory = "AI_Call_Intelligence-dev"
   builder = "NIXPACKS"
 
 [deploy]
