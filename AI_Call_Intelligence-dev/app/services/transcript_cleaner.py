@@ -1,7 +1,9 @@
-from typing import List, Dict
-from app.logger import get_logger
+from typing import Any, Dict, List
 
-logger = get_logger(__name__)
+# Optional STT diagnostics preserved for the raw evidence layer (Whisper).
+_PASSTHROUGH_NUMERIC = frozenset(
+    {"avg_logprob", "compression_ratio", "no_speech_prob", "temperature"}
+)
 
 
 def clean_segments(segments: List[Dict]) -> List[Dict]:
@@ -9,19 +11,27 @@ def clean_segments(segments: List[Dict]) -> List[Dict]:
     Light cleanup:
     - trim spaces
     - remove empty segments
+    - preserve optional confidence-related fields when present
     """
-    cleaned = []
+    cleaned: List[Dict[str, Any]] = []
     for seg in segments:
         text = seg.get("text", "").strip()
         if not text:
             continue
-        cleaned.append(
-            {
-                "start": seg["start"],
-                "end": seg["end"],
-                "text": " ".join(text.split()),
-            }
-        )
-    dropped = len(segments) - len(cleaned)
-    logger.debug("Cleaned segments: %d in, %d out, %d dropped", len(segments), len(cleaned), dropped)
+        row: Dict[str, Any] = {
+            "start": seg["start"],
+            "end": seg["end"],
+            "text": " ".join(text.split()),
+        }
+        if "speaker" in seg and seg["speaker"] is not None:
+            row["speaker"] = seg["speaker"]
+        for key in _PASSTHROUGH_NUMERIC:
+            if key in seg and seg[key] is not None:
+                try:
+                    row[key] = float(seg[key])
+                except (TypeError, ValueError):
+                    row[key] = seg[key]
+        if seg.get("confidence") is not None:
+            row["confidence"] = seg["confidence"]
+        cleaned.append(row)
     return cleaned

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Call Intelligence</title>
+<title>Clario — Call Intelligence</title>
 <script src="/static/react.min.js"></script>
 <script src="/static/react-dom.min.js"></script>
 <script src="/static/prop-types.min.js"></script>
@@ -29,8 +29,6 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,san
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .25s cubic-bezier(.22,1,.36,1)}
 
-@keyframes goldPulse{0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0)}50%{box-shadow:0 0 0 4px rgba(201,168,76,0.18)}}
-
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
 
 /* ── Interactive button/card lift ── */
@@ -44,9 +42,6 @@ input:focus,button:focus-visible{outline:2px solid rgba(201,168,76,0.55);outline
 .card-hover{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
 .card-hover:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(201,168,76,0.14)}
 
-/* ── Nav item active indicator ── */
-.nav-active-glow{box-shadow:inset 0 0 0 1px rgba(201,168,76,0.5),0 2px 8px rgba(201,168,76,0.12)}
-
 /* ── Gold gradient button shine ── */
 .btn-gold-shine{position:relative;overflow:hidden}
 .btn-gold-shine::after{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);transition:left .4s ease}
@@ -56,9 +51,6 @@ input:focus,button:focus-visible{outline:2px solid rgba(201,168,76,0.55);outline
 .stat-shimmer{position:relative;overflow:hidden}
 .stat-shimmer::before{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.55) 50%,transparent 60%);background-size:200% 100%;opacity:0;transition:opacity .2s}
 .stat-shimmer:hover::before{opacity:1;animation:shimmer .6s ease forwards}
-
-/* ── Collapsible header hover ── */
-.collapsible-header:hover{background:rgba(201,168,76,0.06)!important}
 
 /* ── Recording card accent border glow ── */
 .recording-card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.07),0 0 0 1px rgba(201,168,76,0.3)}
@@ -75,10 +67,15 @@ input:focus,button:focus-visible{outline:2px solid rgba(201,168,76,0.55);outline
 </style>
 </head>
 <body>
-<script>window.__API_BASE__='https://ai-call-intelligence-production.up.railway.app';</script>
+<!--
+  __RAILWAY_URL__ is replaced at build time by vercel.json buildCommand.
+  When deployed on Railway+Vercel, RAILWAY_URL env var is substituted here.
+  Locally the fallback in app.jsx kicks in: http://localhost:8000
+-->
+<script>window.__API_BASE__='__RAILWAY_URL__';</script>
 <div id="root">
   <div id="boot-loader">
-    <div style="font-size:1.1rem;font-weight:700;color:#a07830">Call Intelligence</div>
+    <div style="font-size:1.1rem;font-weight:700;color:#a07830">Clario</div>
     <div id="boot-spinner"></div>
     <div id="boot-msg">Loading…</div>
   </div>

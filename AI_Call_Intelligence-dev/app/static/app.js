@@ -664,8 +664,8 @@ const UploadSection = ({
       setMsg('Processing with AI (this may take a minute)…');
       const proc = await apiFetch(`/api/process?filename=${encodeURIComponent(up.filename)}`);
       const jobId = proc.job_id;
-      for (let i = 0; i < 120; i++) {
-        await new Promise(r => setTimeout(r, 3000));
+      for (let i = 0; i < 600; i++) {
+        await new Promise(r => setTimeout(r, 5000));
         const s = await apiFetch(`/api/process-status/${jobId}`);
         if (s.status === 'done') {
           setStatus('done');
@@ -1795,15 +1795,22 @@ const AnalysisDashboard = ({
 // ══════════════════════════════════════════════════════════════════════════
 
 const LivePage = () => /*#__PURE__*/React.createElement("div", {
-  className: "flex-1 p-0"
-}, /*#__PURE__*/React.createElement("iframe", {
-  src: `${API}/static/live_transcription.html`,
-  className: "w-full border-0",
-  style: {
-    height: 'calc(100vh - 0px)'
-  },
-  title: "Live Transcription"
-}));
+  className: "flex-1 flex flex-col items-center justify-center gap-6 p-10"
+},
+  /*#__PURE__*/React.createElement("div", {className: "text-center"},
+    /*#__PURE__*/React.createElement("div", {className: "text-gold-dark font-bold text-lg mb-2"}, "Live Transcription"),
+    /*#__PURE__*/React.createElement("p", {className: "text-sm text-gray-400 mb-6 max-w-sm"},
+      "Opens in a new tab so the browser can access your microphone and screen audio without restrictions."
+    ),
+    /*#__PURE__*/React.createElement("a", {
+      href: `${API}/static/live_transcription.html`,
+      target: "_blank",
+      rel: "noopener noreferrer",
+      className: "inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white text-sm",
+      style: {background: "linear-gradient(135deg,#c9a84c,#a07830)"}
+    }, "Open Live Transcription")
+  )
+);
 const CalendarPage = () => {
   const googleOk = true;
   return /*#__PURE__*/React.createElement("div", {
