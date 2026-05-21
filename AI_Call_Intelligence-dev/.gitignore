@@ -22,9 +22,12 @@ outlook_token.json
 data/audio/
 data/uploads/
 data/logs/
+data/outputs/
+data/bot_profile/
 
-# Keep output results in git (optional — remove line below to exclude)
-# data/outputs/
+# Claude Code session files
+.claude/
+CLAUDE.md
 
 # IDE
 .vscode/

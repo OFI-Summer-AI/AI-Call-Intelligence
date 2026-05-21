@@ -15,7 +15,6 @@ class STTService:
         current_path = os.environ.get("PATH", "")
         if ffmpeg_bin_dir not in current_path:
             os.environ["PATH"] = ffmpeg_bin_dir + os.pathsep + current_path
-
         self.model = whisper.load_model(model_size)
         logger.info("Whisper model '%s' loaded", model_size)
 
@@ -24,33 +23,18 @@ class STTService:
         logger.info("Transcribing: %s", audio_path.name)
         result = self.model.transcribe(str(audio_path), fp16=False)
         language = result.get("language", "unknown")
-
-        segments = []
-        for seg in result.get("segments", []):
-            segments.append(
-                {
-                    "start": self._seconds_to_timestamp(seg["start"]),
-                    "end": self._seconds_to_timestamp(seg["end"]),
-                    "text": seg["text"].strip(),
-                }
-            )
-
-        logger.info(
-            "Transcription complete — language=%s, segments=%d, words=%d",
-            language,
-            len(segments),
-            len(result.get("text", "").split()),
-        )
-        return {
-            "language": language,
-            "text": result.get("text", "").strip(),
-            "segments": segments,
-        }
+        segments = [
+            {
+                "start": self._fmt(seg["start"]),
+                "end":   self._fmt(seg["end"]),
+                "text":  seg["text"].strip(),
+            }
+            for seg in result.get("segments", [])
+        ]
+        logger.info("Transcription done — language=%s, segments=%d", language, len(segments))
+        return {"language": language, "text": result.get("text", "").strip(), "segments": segments}
 
     @staticmethod
-    def _seconds_to_timestamp(seconds: float) -> str:
-        total_seconds = int(seconds)
-        hh = total_seconds // 3600
-        mm = (total_seconds % 3600) // 60
-        ss = total_seconds % 60
-        return f"{hh:02d}:{mm:02d}:{ss:02d}"
+    def _fmt(seconds: float) -> str:
+        t = int(seconds)
+        return f"{t // 3600:02d}:{(t % 3600) // 60:02d}:{t % 60:02d}"

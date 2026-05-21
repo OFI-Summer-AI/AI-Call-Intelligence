@@ -1,6 +1,7 @@
-import asyncio, os, signal, subprocess
+import asyncio, os, signal, subprocess, json
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.logger import get_logger
@@ -215,6 +216,67 @@ class JoinNowBody(BaseModel):
     title       : str = "Manual Join"
 
 
+@router.get("/api/bot-test")
+async def bot_test():
+    """
+    Diagnostic endpoint — verifies that the meeting bot can launch a browser.
+    Runs the Playwright sync API in a thread (same as the real bot does) so the
+    asyncio-loop restriction doesn't apply.
+    """
+    import shutil, tempfile, traceback
+
+    result = {}
+
+    # 1. ffmpeg
+    ffmpeg = shutil.which("ffmpeg") or shutil.which("ffmpeg.exe")
+    result["ffmpeg"] = ffmpeg or "NOT FOUND"
+
+    # 2. MeetingBot construction
+    try:
+        from app.agent.meeting_bot import MeetingBot
+        MeetingBot()
+        result["meeting_bot_init"] = "ok"
+    except Exception as exc:
+        result["meeting_bot_init"] = f"FAILED: {exc}"
+        return result
+
+    # 3. Playwright persistent context — must run in a thread, NOT in the event loop
+    def _test_browser():
+        from playwright.sync_api import sync_playwright
+        profile = tempfile.mkdtemp(prefix="bot_test_")
+        browser_ok = None
+        errors = {}
+        with sync_playwright() as pw:
+            for ch in ("chrome", "msedge", None):
+                try:
+                    kw = dict(user_data_dir=profile, headless=True,
+                              args=["--no-sandbox", "--disable-dev-shm-usage"])
+                    if ch:
+                        ctx = pw.chromium.launch_persistent_context(channel=ch, **kw)
+                    else:
+                        ctx = pw.chromium.launch_persistent_context(**kw)
+                    browser_ok = ch or "bundled-chromium"
+                    ctx.close()
+                    break
+                except Exception as e:
+                    errors[ch or "bundled"] = str(e)
+        return browser_ok, errors
+
+    try:
+        loop = asyncio.get_event_loop()
+        browser_ok, errors = await loop.run_in_executor(None, _test_browser)
+        result["browser_launch"] = f"ok via {browser_ok}" if browser_ok else "ALL FAILED"
+        if errors:
+            result["browser_errors"] = errors
+    except Exception as exc:
+        result["browser_launch"] = f"FAILED: {traceback.format_exc()}"
+
+    # 4. Current agent state
+    result["agent_state"] = AGENT_STATE.get("status", "unknown")
+
+    return result
+
+
 @router.post("/api/join-now")
 async def join_now(body: JoinNowBody):
     """
@@ -224,8 +286,29 @@ async def join_now(body: JoinNowBody):
     from app.agent.meeting_bot import MeetingBot
     from app.agent.calendar_watcher import MeetingEvent
 
-    if AGENT_STATE.get("status") in ("running", "starting"):
-        return {"error": "agent_already_running", "status": AGENT_STATE["status"]}
+    # Guard against double-launch, but first heal any stuck state:
+    # if a previous subprocess-based agent is no longer alive but the status
+    # was never reset (e.g. it died while still "starting"), clear it so
+    # join-now can proceed.
+    current_status = AGENT_STATE.get("status")
+    if current_status in ("running", "starting"):
+        pid = AGENT_STATE.get("pid")
+        pid_alive = False
+        if pid:
+            try:
+                os.kill(pid, 0)
+                pid_alive = True
+            except (ProcessLookupError, PermissionError, OSError):
+                pid_alive = False
+        # No pid (asyncio-task join) or dead pid — reset so we can proceed
+        if not pid_alive and current_status != "running":
+            logger.warning(
+                "Clearing stale agent state '%s' (pid=%s dead) to allow join-now",
+                current_status, pid
+            )
+            AGENT_STATE.update({"status": "stopped", "pid": None})
+        elif pid_alive:
+            return {"error": "agent_already_running", "status": current_status}
 
     now        = datetime.now(timezone.utc)
     session_id = now.strftime("%Y%m%d_%H%M%S")
@@ -327,3 +410,41 @@ async def upcoming_meetings():
         }
         for e in events
     ]
+
+
+# ── Recordings library ───────────────────────────────────────────────────────
+# NOTE: GET /api/recordings (list) is intentionally NOT defined here.
+# It is defined in realtime_server.py and returns the array format the frontend
+# expects.  Defining it here (via include_router which runs first) would shadow
+# the real endpoint and break the dashboard.
+
+
+@router.get("/api/recordings/{filename}/download")
+async def download_recording(filename: str):
+    """Stream the WAV file for playback or download."""
+    from app.config import UPLOAD_DIR
+    path = UPLOAD_DIR / filename
+    if not path.exists() or path.suffix.lower() not in (".wav", ".mp4", ".webm"):
+        raise HTTPException(status_code=404, detail="Recording not found")
+    return FileResponse(str(path), media_type="audio/wav",
+                        headers={"Content-Disposition": f'inline; filename="{filename}"'})
+
+
+@router.get("/api/recordings/{stem}/transcript")
+async def get_transcript(stem: str):
+    """Return the full transcript JSON for a recording."""
+    from app.config import OUTPUT_DIR
+    path = OUTPUT_DIR / f"{stem}_transcript.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Transcript not found")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@router.get("/api/recordings/{stem}/result")
+async def get_result(stem: str):
+    """Return the full analysis result JSON for a recording."""
+    from app.config import OUTPUT_DIR
+    path = OUTPUT_DIR / f"{stem}_result.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Result not found")
+    return json.loads(path.read_text(encoding="utf-8"))

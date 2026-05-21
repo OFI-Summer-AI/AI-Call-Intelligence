@@ -2,11 +2,10 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = Path(os.getenv("DATA_DIR", "/tmp/app_data"))
-UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "/tmp/app_data/uploads"))
+load_dotenv(BASE_DIR / ".env")
+DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data")))
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", str(BASE_DIR / "data" / "uploads")))
 AUDIO_DIR = DATA_DIR / "audio"
 OUTPUT_DIR = DATA_DIR / "outputs"
 

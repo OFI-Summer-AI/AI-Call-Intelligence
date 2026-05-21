@@ -9,9 +9,10 @@ Flow:
 import asyncio
 import json
 import re
+import threading
 from pathlib import Path
 from datetime import datetime
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse, Response
@@ -33,11 +34,6 @@ app.add_middleware(
 app.include_router(api_router)
 
 
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
-
-
 # Serve the standalone HTML UI
 STATIC_DIR = Path(__file__).parent / "static"
 if STATIC_DIR.exists():
@@ -45,6 +41,9 @@ if STATIC_DIR.exists():
 
 # Shared transcription service (loaded once)
 stt_service: RealtimeSTTService | None = None
+
+# Meeting agent scheduler (auto-started with the server)
+_meeting_scheduler = None
 
 
 def get_stt_service() -> RealtimeSTTService:
@@ -60,9 +59,38 @@ active_transcripts: dict[str, list[dict]] = {}
 
 @app.on_event("startup")
 async def startup():
-    """Pre-load the Whisper model."""
-    get_stt_service()
+    global _meeting_scheduler
+    loop = asyncio.get_event_loop()
+
+    # Load Whisper model in background thread
+    await loop.run_in_executor(None, get_stt_service)
     print("[Server] Whisper model loaded. Ready for connections.")
+
+    # Auto-start the meeting agent scheduler so the bot joins
+    # Google Calendar meetings automatically (2 min early by default).
+    def _start_scheduler():
+        global _meeting_scheduler
+        try:
+            from app.agent.scheduler import MeetingAgentScheduler
+            _meeting_scheduler = MeetingAgentScheduler()
+            _meeting_scheduler.start()
+            print("[Server] Meeting agent scheduler started — "
+                  "bot will join calendar meetings automatically.")
+        except Exception as exc:
+            print(f"[Server] Meeting agent scheduler failed to start: {exc}")
+
+    await loop.run_in_executor(None, _start_scheduler)
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    global _meeting_scheduler
+    if _meeting_scheduler is not None:
+        try:
+            _meeting_scheduler.stop()
+            print("[Server] Meeting agent scheduler stopped.")
+        except Exception:
+            pass
 
 
 @app.get("/health")
@@ -197,11 +225,28 @@ async def favicon():
 @app.get("/api/recordings")
 async def list_recordings():
     results = []
+    seen_job_ids = set()
+
+    # Completed recordings
     for p in sorted(OUTPUT_DIR.glob("*_result.json"), key=lambda x: x.stat().st_mtime, reverse=True):
         try:
-            results.append(json.loads(p.read_text(encoding="utf-8")))
+            data = json.loads(p.read_text(encoding="utf-8"))
+            results.append(data)
+            seen_job_ids.add(data.get("job_id", ""))
         except Exception:
             pass
+
+    # In-progress or failed uploads not yet in results
+    for job_id, job in list(_processing_jobs.items()):
+        if job_id not in seen_job_ids and job.get("status") in ("processing", "error"):
+            results.insert(0, {
+                "job_id": job_id,
+                "_upload_status": job.get("status"),
+                "_upload_step": job.get("step", ""),
+                "_upload_detail": job.get("detail", ""),
+                "_upload_error": job.get("error", ""),
+            })
+
     return results
 
 
@@ -241,12 +286,13 @@ async def download_pdf(job_id: str):
 
 # ── File processing pipeline ──────────────────────────────────────────────────
 @app.post("/api/process")
-async def process_file(background_tasks: BackgroundTasks, filename: str):
+async def process_file(filename: str):
     job_id = re.sub(r"[^\w\-]", "_", Path(filename).stem)
     if _processing_jobs.get(job_id, {}).get("status") == "processing":
         return {"job_id": job_id, "status": "already_processing"}
     _processing_jobs[job_id] = {"status": "processing", "started": datetime.now().isoformat()}
-    background_tasks.add_task(_run_pipeline, filename, job_id)
+    thread = threading.Thread(target=_run_pipeline, args=(filename, job_id), daemon=True)
+    thread.start()
     return {"job_id": job_id, "status": "processing"}
 
 
@@ -254,10 +300,19 @@ async def process_file(background_tasks: BackgroundTasks, filename: str):
 async def process_status(job_id: str):
     if (OUTPUT_DIR / f"{job_id}_result.json").exists():
         return {"status": "done"}
-    return _processing_jobs.get(job_id, {"status": "not_found"})
+    job = _processing_jobs.get(job_id)
+    if job:
+        return job
+    # Server may have restarted — use audio file as proxy for in-progress
+    if (AUDIO_DIR / f"{job_id}.wav").exists():
+        return {"status": "processing", "step": "Transcribing", "detail": "Running Whisper — this may take a while…"}
+    return {"status": "not_found"}
 
 
 def _run_pipeline(filename: str, job_id: str):
+    def _stage(step: str, detail: str = ""):
+        _processing_jobs[job_id] = {"status": "processing", "step": step, "detail": detail}
+
     try:
         from app.services.audio_extractor import extract_audio
         from app.services.stt_service import STTService
@@ -268,11 +323,21 @@ def _run_pipeline(filename: str, job_id: str):
 
         src = UPLOAD_DIR / filename
         audio_out = AUDIO_DIR / f"{job_id}.wav"
+
+        _stage("Extracting audio", f"Reading {filename}")
         extract_audio(src, audio_out)
+
+        _stage("Transcribing", "Running Whisper — this may take a while for long recordings…")
         stt = STTService(model_size=WHISPER_MODEL_SIZE).transcribe(audio_out)
         segs = clean_segments(stt["segments"])
+
+        _stage("Extracting fields", "Analysing transcript with AI…")
         fields = FieldExtractor().extract(segs)
+
+        _stage("Generating risk report", "Scoring call risk…")
         risk = RiskReportService().generate(fields, segs)
+
+        _stage("Saving results", "")
         storage = StorageService()
         storage.save_json({"language": stt.get("language"), "segments": segs},
                           OUTPUT_DIR / f"{job_id}_transcript.json")
@@ -282,6 +347,8 @@ def _run_pipeline(filename: str, job_id: str):
                           OUTPUT_DIR / f"{job_id}_result.json")
         _processing_jobs[job_id] = {"status": "done"}
     except Exception as e:
+        import traceback
+        print(f"[Pipeline] ERROR for {job_id}: {e}\n{traceback.format_exc()}")
         _processing_jobs[job_id] = {"status": "error", "error": str(e)}
 
 

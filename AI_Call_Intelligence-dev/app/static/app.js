@@ -591,6 +591,32 @@ const RecordingCard = ({
   const id = rec.job_id || '';
   const title = prettify(id);
   const date = parseDate(id);
+  const uploadStatus = rec._upload_status;
+  const isProcessing = uploadStatus === 'processing';
+  const isError = uploadStatus === 'error';
+  if (isProcessing || isError) {
+    return /*#__PURE__*/React.createElement("div", {
+      className: "bg-white border border-gray-200 rounded-2xl p-5 mb-3 fade-in recording-card",
+      style: {
+        borderLeft: `4px solid ${isError ? '#ef4444' : '#c9a84c'}`
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-start justify-between gap-4"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex-1 min-w-0"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "font-bold text-gray-900 text-base truncate"
+    }, title), isProcessing && /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-2 mt-2 text-xs text-gold-dark"
+    }, /*#__PURE__*/React.createElement(IcoSpin, {
+      s: 13
+    }), rec._upload_step || 'Processing…', rec._upload_detail ? ` — ${rec._upload_detail}` : ''), isError && /*#__PURE__*/React.createElement("div", {
+      className: "text-xs text-red-500 mt-2"
+    }, "Error: ", rec._upload_error || 'Processing failed')), /*#__PURE__*/React.createElement(Badge, {
+      label: isProcessing ? 'Processing' : 'Failed',
+      type: isProcessing ? 'amber' : 'red'
+    })));
+  }
   const dur = getDuration(rec.transcript);
   const f = rec.extracted_fields || {};
   const risks = rec.risk_report?.risks || [];
@@ -633,7 +659,8 @@ const RecordingCard = ({
 
 // ── Upload Section ─────────────────────────────────────────────────────────
 const UploadSection = ({
-  onProcessed
+  onProcessed,
+  onRefresh
 }) => {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
@@ -662,11 +689,18 @@ const UploadSection = ({
       }).then(r => r.json());
       setStatus('processing');
       setMsg('Processing with AI (this may take a minute)…');
-      const proc = await apiFetch(`/api/process?filename=${encodeURIComponent(up.filename)}`);
+      const proc = await apiFetch(`/api/process?filename=${encodeURIComponent(up.filename)}`, {
+        method: 'POST'
+      });
       const jobId = proc.job_id;
-      for (let i = 0; i < 120; i++) {
-        await new Promise(r => setTimeout(r, 3000));
+      if (onRefresh) onRefresh();
+      for (let i = 0; i < 720; i++) {
+        await new Promise(r => setTimeout(r, 5000));
         const s = await apiFetch(`/api/process-status/${jobId}`);
+        if (onRefresh) onRefresh();
+        const step = s.step ? ` — ${s.step}` : '';
+        const elapsed = Math.round((i + 1) * 5 / 60);
+        setMsg(`Processing with AI${step} (${elapsed} min elapsed, large files can take 30-60 min)…`);
         if (s.status === 'done') {
           setStatus('done');
           setMsg(`Done — "${prettify(jobId)}" is ready.`);
@@ -681,7 +715,7 @@ const UploadSection = ({
         }
       }
       setStatus('error');
-      setMsg('Timed out — check server logs.');
+      setMsg('Timed out after 60 min — check server logs.');
     } catch (e) {
       setStatus('error');
       setMsg(String(e));
@@ -1971,7 +2005,8 @@ const App = () => {
     }),
     defaultOpen: true
   }, /*#__PURE__*/React.createElement(UploadSection, {
-    onProcessed: handleProcessed
+    onProcessed: handleProcessed,
+    onRefresh: loadRecordings
   })), /*#__PURE__*/React.createElement(Collapsible, {
     title: "Join as Organizer",
     icon: /*#__PURE__*/React.createElement(IcoLive, {
@@ -2014,7 +2049,8 @@ const App = () => {
     }),
     defaultOpen: true
   }, /*#__PURE__*/React.createElement(UploadSection, {
-    onProcessed: handleProcessed
+    onProcessed: handleProcessed,
+    onRefresh: loadRecordings
   })), /*#__PURE__*/React.createElement(Collapsible, {
     title: "Join as Organizer",
     icon: /*#__PURE__*/React.createElement(IcoLive, {

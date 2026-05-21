@@ -56,8 +56,8 @@ class GoogleCalendarWatcher:
     SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
     def __init__(self):
-        self._creds_file = Path(os.getenv("GOOGLE_CREDENTIALS_FILE", "/tmp/credentials.json"))
-        self._token_file = Path(os.getenv("GOOGLE_TOKEN_FILE", "/tmp/google_token.json"))
+        self._creds_file = Path(os.getenv("GOOGLE_CREDENTIALS_FILE", str(Path(__file__).resolve().parent.parent.parent / "credentials.json")))
+        self._token_file = Path(os.getenv("GOOGLE_TOKEN_FILE", str(Path(__file__).resolve().parent.parent.parent / "google_token.json")))
         self._service = None
 
     def _build_service(self):
@@ -135,10 +135,7 @@ class GoogleCalendarWatcher:
                 item.get("location", ""),
                 item.get("description", ""),
             ])
-            if not found:
-                continue
-
-            join_url, platform = found
+            join_url, platform = found if found else ("", "")
             meetings.append(MeetingEvent(
                 event_id=item["id"],
                 title=item.get("summary", "Untitled Meeting"),
@@ -164,7 +161,7 @@ class OutlookCalendarWatcher:
     def __init__(self):
         self._client_id = os.getenv("MICROSOFT_CLIENT_ID", "")
         self._tenant_id = os.getenv("MICROSOFT_TENANT_ID", "common")
-        self._token_cache_file = Path(os.getenv("OUTLOOK_TOKEN_FILE", "/tmp/outlook_token.json"))
+        self._token_cache_file = Path(os.getenv("OUTLOOK_TOKEN_FILE", str(Path(__file__).resolve().parent.parent.parent / "outlook_token.json")))
         self._app = None
 
     def _build_app(self):
