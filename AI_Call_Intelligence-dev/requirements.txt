@@ -1,131 +1,42 @@
-aiohappyeyeballs==2.6.1
-aiohttp==3.13.5
-aiosignal==1.4.0
-# alembic==1.18.4              # UNUSED: DB migration tool, no database in this project
-# annotated-doc==0.0.4         # UNUSED: not imported anywhere
-annotated-types==0.7.0
-anyio==4.13.0
-# asteroid-filterbanks==0.4.0  # UNUSED: audio DSP library, not imported
-async-timeout==5.0.1
-attrs==26.1.0
-certifi==2026.4.22
-charset-normalizer==3.4.7
-click==8.3.3
-colorama==0.4.6
-# colorlog==6.10.1             # UNUSED: standard logging used instead (see app/logger.py)
-# contourpy==1.3.2             # UNUSED: matplotlib sub-dep, matplotlib not used
-# cycler==0.12.1               # UNUSED: matplotlib sub-dep
-# einops==0.8.2                # UNUSED: tensor ops library, not imported
-exceptiongroup==1.3.1
-fastapi==0.136.1
-ffmpeg-python==0.2.0
-filelock==3.29.0
-# fonttools==4.62.1            # UNUSED: matplotlib sub-dep
-frozenlist==1.8.0
-fsspec==2026.4.0
-# future==1.0.0                # UNUSED: Python 2 compatibility shim, not needed on Python 3
-# googleapis-common-protos==1.75.0  # UNUSED: gRPC/protobuf, not used
-# greenlet==3.5.0              # UNUSED: SQLAlchemy async dep, no DB in project
-# grpcio==1.80.0               # UNUSED: gRPC framework, not imported
-h11==0.16.0
-# hf-xet==1.5.0                # UNUSED: HuggingFace XET file transfer, not imported
-httpcore==1.0.9
-httpx==0.28.1
-huggingface_hub==1.14.0
-idna==3.13
-importlib_metadata==8.7.1
-Jinja2==3.1.6
-joblib==1.5.3
-# julius==0.2.7                # UNUSED: audio DSP library, not imported
-# kiwisolver==1.5.0            # UNUSED: matplotlib sub-dep
-# lightning==2.6.1             # UNUSED: PyTorch Lightning, not imported
-# lightning-utilities==0.15.3  # UNUSED: Lightning sub-dep
-# llvmlite==0.47.0             # UNUSED: Numba sub-dep
-# Mako==1.3.12                 # UNUSED: Alembic template engine sub-dep
-# markdown-it-py==4.1.0        # UNUSED: not imported
-MarkupSafe==3.0.3
-# matplotlib==3.10.9           # UNUSED: plotting library, frontend uses Recharts
-# mdurl==0.1.2                 # UNUSED: markdown-it-py sub-dep
-# more-itertools==11.0.2       # UNUSED: not imported
-# mpmath==1.3.0                # UNUSED: sympy sub-dep
-multidict==6.7.1
-# networkx==3.4.2              # UNUSED: graph library, not imported
-# numba==0.65.1                # UNUSED: JIT compiler, not imported
-numpy==2.2.6
-openai-whisper==20250625
-# opentelemetry-api==1.41.1              # UNUSED: observability stack, not used
-# opentelemetry-exporter-otlp==1.41.1   # UNUSED
-# opentelemetry-exporter-otlp-proto-common==1.41.1  # UNUSED
-# opentelemetry-exporter-otlp-proto-grpc==1.41.1    # UNUSED
-# opentelemetry-exporter-otlp-proto-http==1.41.1    # UNUSED
-# opentelemetry-proto==1.41.1           # UNUSED
-# opentelemetry-sdk==1.41.1             # UNUSED
-# opentelemetry-semantic-conventions==0.62b1  # UNUSED
-# optuna==4.8.0                # UNUSED: hyperparameter tuning, not imported
-packaging==24.1
-# pandas==2.3.3                # UNUSED: data analysis library, not imported
-# pillow==11.2.1               # UNUSED: image processing, not imported
-# primePy==1.3                 # UNUSED: prime number utilities, not imported
-propcache==0.4.1
-# protobuf==6.33.6             # UNUSED: gRPC sub-dep
-pyannote-audio==4.0.4
-pyannote-core==6.0.1
-pyannote-database==6.1.1
-pyannote-metrics==4.1
-pyannote-pipeline==4.0.0
-# pyannoteai-sdk==0.4.0        # UNUSED: cloud SDK version of pyannote, different from pyannote-audio
-pydantic==2.13.4
-pydantic_core==2.46.4
-Pygments==2.20.0
-# pyparsing==3.3.2             # UNUSED: parser library, not imported
-python-dateutil==2.9.0.post0
-python-dotenv==1.2.2
-python-multipart==0.0.27
-# pytorch-lightning==2.6.1     # UNUSED: duplicate of lightning package
-# pytorch-metric-learning==2.9.0  # UNUSED: metric learning, not imported
-pytz==2026.2
-PyYAML==6.0.3
-# regex==2026.4.4              # UNUSED: advanced regex, not imported
-requests==2.33.1
-rich==15.0.0
-# safetensors==0.7.0           # UNUSED: tensor serialization, not imported
-scikit-learn==1.7.2
-scipy==1.15.3
-shellingham==1.5.4
-# six==1.17.0                  # UNUSED: Python 2 compatibility shim
-# sortedcontainers==2.4.0      # UNUSED: not imported
-# SQLAlchemy==2.0.49           # UNUSED: ORM, no database in project
-starlette==1.0.0
-sympy==1.14.0
-threadpoolctl==3.6.0
-# tiktoken==0.12.0             # UNUSED: token counter, not imported
-tomli==2.4.1
-# torch==2.11.0  # installed as CPU-only in Dockerfile before this step
-# torch-audiomentations==0.12.0  # UNUSED: audio augmentation, not imported
-# torch_pitch_shift==1.2.5       # UNUSED: pitch shifting, not imported
-# torchaudio==2.11.0  # installed as CPU-only in Dockerfile before this step
-# torchcodec==0.11.1           # UNUSED: video codec, not imported
-# torchmetrics==1.9.0          # UNUSED: PyTorch metrics, not imported
-tqdm==4.67.3
-typer==0.25.1
-# typing-inspection==0.4.2     # UNUSED: not imported
-typing_extensions==4.15.0
-tzdata==2026.2
-urllib3==2.6.3
-uvicorn==0.46.0
-yarl==1.23.0
-zipp==3.23.1
-# streamlit==1.45.1            # UNUSED: old UI, replaced by React dashboard
-websockets==15.0.1
-soundfile==0.13.1
-# plotly>=5.18                 # UNUSED: charts handled by Recharts in frontend
-litellm>=1.40
-anthropic>=0.28
-# groq>=0.9.0                  # UNUSED: Groq API client, not imported
-fpdf2>=2.7
-sentence-transformers>=2.7
-playwright>=1.40
-google-auth>=2.0
-google-auth-oauthlib>=1.0
-google-api-python-client>=2.0
-msal>=1.20
+# ── Web server ──────────────────────────────────────────────────────────────
+fastapi>=0.110.0
+uvicorn>=0.29.0
+python-multipart>=0.0.9
+websockets>=12.0
+starlette>=0.36.0
+
+# ── OpenAI / LLM ────────────────────────────────────────────────────────────
+openai>=1.30.0
+
+# ── Speech-to-text ──────────────────────────────────────────────────────────
+openai-whisper>=20231117
+# torch and torchaudio are installed separately in Dockerfile (CPU-only build)
+
+# ── Audio processing ────────────────────────────────────────────────────────
+# NOTE: app calls the ffmpeg binary directly via subprocess — ffmpeg-python
+#       (the Python wrapper) is not used and has been removed.
+numpy>=1.24.0
+
+# ── Speaker diarization (optional — requires HF token) ──────────────────────
+pyannote.audio>=3.1.1
+
+# ── Data / utilities ────────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+pydantic>=2.6.0
+pandas>=2.0.0
+
+# ── HTTP clients ─────────────────────────────────────────────────────────────
+httpx>=0.27.0
+requests>=2.31.0
+
+# ── PDF export ──────────────────────────────────────────────────────────────
+fpdf2>=2.7.6
+
+# ── Meeting agent (calendar + browser bot) ──────────────────────────────────
+playwright>=1.40.0
+google-auth>=2.28.0
+google-auth-oauthlib>=1.2.0
+google-api-python-client>=2.120.0
+msal>=1.27.0
+APScheduler>=3.10.4
+python-dateutil>=2.9.0

@@ -1,20 +1,22 @@
 FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y ffmpeg git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg git curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY AI_Call_Intelligence-dev/requirements.txt .
+COPY AI_Call_refactor/requirements.txt .
 
-# Install CPU-only torch first (avoids downloading 2GB CUDA build)
+# CPU-only torch first (avoids 2GB CUDA download)
 RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 
-# Install remaining dependencies
+# Remaining deps
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright browser
+# Playwright browser (for meeting bot)
 RUN playwright install chromium --with-deps
 
-COPY AI_Call_Intelligence-dev/ .
+COPY AI_Call_refactor/ .
 
-CMD ["uvicorn", "app.realtime_server:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8080"]

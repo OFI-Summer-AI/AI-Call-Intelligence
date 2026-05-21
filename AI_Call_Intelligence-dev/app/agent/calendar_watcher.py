@@ -148,7 +148,7 @@ class GoogleCalendarWatcher:
                 platform=platform,
                 source="google",
             ))
-            logger.info("Google event found: '%s' at %s [%s]", item.get("summary"), start, platform)
+            logger.debug("Google event found: '%s' at %s [%s]", item.get("summary"), start, platform)
 
         return meetings
 
@@ -257,6 +257,6 @@ class OutlookCalendarWatcher:
                 platform=platform,
                 source="outlook",
             ))
-            logger.info("Outlook event found: '%s' at %s [%s]", item.get("subject"), start, platform)
+            logger.debug("Outlook event found: '%s' at %s [%s]", item.get("subject"), start, platform)
 
         return meetings

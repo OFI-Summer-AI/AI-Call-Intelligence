@@ -1,0 +1,7 @@
+[build]
+  builder = "DOCKERFILE"
+  dockerfilePath = "AI_Call_refactor/Dockerfile"
+
+[deploy]
+  healthcheckPath = "/health"
+  healthcheckTimeout = 300

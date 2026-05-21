@@ -72,7 +72,7 @@
             <h1>Live Transcription</h1>
             <span>Whisper AI</span>
         </div>
-        <div style="font-size:.72rem;color:#334155">ws://localhost:8000</div>
+        <div style="font-size:.72rem;color:#334155" id="wsHostLabel">ws://localhost:8000</div>
     </div>
 
     <div class="tab-bar">
@@ -131,13 +131,26 @@
     <div style="padding:0 28px 20px">
         <div class="config-bar">
             <span class="config-label">WS URL</span>
-            <input class="config-input" type="text" id="wsUrl" value="ws://localhost:8000/ws/transcribe" style="flex:1">
+            <input class="config-input" type="text" id="wsUrl" style="flex:1">
             <span class="config-label">Chunk ms</span>
             <input class="config-input" type="number" id="chunkMs" value="2000" style="width:80px">
         </div>
     </div>
 
     <script>
+        // Auto-detect WebSocket URL from current page location.
+        // Works for local (ws://localhost:8000) and deployed (wss://your-app.railway.app).
+        // If you need to override (e.g. Vercel frontend → Railway backend), set window.__API_BASE__
+        // in index.html before this iframe loads, e.g.:
+        //   window.__API_BASE__ = 'https://your-app.railway.app';
+        (function(){
+            var loc=window.location;
+            var wsProto=loc.protocol==='https:'?'wss:':'ws:';
+            var wsBase=wsProto+'//'+loc.host;
+            document.getElementById('wsUrl').value=wsBase+'/ws/transcribe';
+            document.getElementById('wsHostLabel').textContent=wsBase;
+        })();
+
         let mediaRecorder,ws,isRecording=false,micChunks=[];
         let scMediaRecorder,scWs,scFullRecorder,scIsRecording=false,scChunks=[],scTimerInterval,scSeconds=0;
 
@@ -157,7 +170,16 @@
             if(statusEl)statusEl.innerHTML='<span class="status-gold">Saving…</span>';
             fetch(getBase()+'/api/upload-recording',{method:'POST',body:fd})
                 .then(r=>r.json())
-                .then(d=>{if(statusEl)statusEl.innerHTML='<span class="status-ok">Saved: '+d.filename+'</span>';})
+                .then(d=>{
+                    if(statusEl)statusEl.innerHTML='<span class="status-ok">Saved — running analysis…</span>';
+                    // Trigger full pipeline analysis (same as upload flow in the main app)
+                    return fetch(getBase()+'/api/process?filename='+encodeURIComponent(d.filename));
+                })
+                .then(r=>r.json())
+                .then(d=>{
+                    var link='<a href="'+getBase()+'/" target="_blank" style="color:#c9a84c;text-decoration:underline">View in dashboard →</a>';
+                    if(statusEl)statusEl.innerHTML='<span class="status-ok">Analysis started (job: '+d.job_id+') · '+link+'</span>';
+                })
                 .catch(()=>{if(statusEl)statusEl.innerHTML='<span class="status-err">Save failed</span>';});
         }
 
@@ -230,9 +252,16 @@
                 if(!at.length){document.getElementById('scStatus').innerHTML='<span class="status-err">No audio — tick "Share audio"</span>';ds.getTracks().forEach(t=>t.stop());return;}
                 var ctx=new AudioContext();
                 var dest=ctx.createMediaStreamDestination();
+                // Screen audio at normal volume
                 ctx.createMediaStreamSource(new MediaStream(at)).connect(dest);
                 if(document.getElementById('scIncludeMic').checked){
-                    try{var ms=await navigator.mediaDevices.getUserMedia({audio:true});ctx.createMediaStreamSource(ms).connect(dest);}catch(e){}
+                    try{
+                        var ms=await navigator.mediaDevices.getUserMedia({audio:true});
+                        // Boost mic gain 2x so your voice isn't drowned out by screen audio
+                        var micGain=ctx.createGain(); micGain.gain.value=2.0;
+                        ctx.createMediaStreamSource(ms).connect(micGain);
+                        micGain.connect(dest);
+                    }catch(e){}
                 }
                 scWs=new WebSocket(wsUrl);
                 scWs.onopen=()=>{

@@ -1,0 +1,8 @@
+{
+  "outputDirectory": "AI_Call_refactor/app/static",
+  "buildCommand": "[ -n \"$RAILWAY_URL\" ] && sed -i \"s|__RAILWAY_URL__|${RAILWAY_URL}|g\" AI_Call_refactor/app/static/index.html || echo 'RAILWAY_URL not set, skipping substitution'",
+  "rewrites": [
+    { "source": "/static/(.*)", "destination": "/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
